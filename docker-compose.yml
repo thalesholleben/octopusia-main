@@ -6,6 +6,7 @@ networks:
 
 services:
   backend:
+    container_name: n8n_octopusia_backend
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -28,6 +29,7 @@ services:
       retries: 3
 
   frontend:
+    container_name: n8n_octopusia_frontend
     build:
       context: .
       dockerfile: Dockerfile
