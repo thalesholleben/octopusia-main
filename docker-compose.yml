@@ -1,5 +1,5 @@
 networks:
-  n8n_default:
+  easypanel-n8n:
     external: true
 
 services:
@@ -8,7 +8,7 @@ services:
       context: ./server
       dockerfile: Dockerfile
     networks:
-      - n8n_default
+      - easypanel-n8n
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -31,7 +31,7 @@ services:
       args:
         VITE_API_URL: https://hub.thalesgomes.com/api
     networks:
-      - n8n_default
+      - easypanel-n8n
     expose:
       - "80"
     depends_on:
