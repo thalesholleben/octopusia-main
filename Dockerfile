@@ -3,6 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build args para variáveis de ambiente do Vite
+ARG VITE_API_URL=http://localhost:3001/api
+ENV VITE_API_URL=$VITE_API_URL
+
 # Copiar package files
 COPY package*.json ./
 
@@ -12,7 +16,7 @@ RUN npm ci
 # Copiar código fonte (exceto server/)
 COPY . .
 
-# Build do Vite
+# Build do Vite com a variável de ambiente
 RUN npm run build
 
 # Production image com Nginx

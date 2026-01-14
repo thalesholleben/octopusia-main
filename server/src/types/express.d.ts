@@ -1,10 +1,13 @@
-import { User } from '@prisma/client';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Request } from 'express';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: Pick<User, 'id' | 'email' | 'displayName'>;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: {
+      id: string;
+      email: string;
+      displayName?: string | null;
+    };
   }
 }
 
