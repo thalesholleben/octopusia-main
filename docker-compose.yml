@@ -1,4 +1,6 @@
 networks:
+  easypanel:
+    external: true
   easypanel-n8n:
     external: true
 
@@ -8,6 +10,7 @@ services:
       context: ./server
       dockerfile: Dockerfile
     networks:
+      - easypanel
       - easypanel-n8n
     environment:
       NODE_ENV: production
@@ -31,6 +34,7 @@ services:
       args:
         VITE_API_URL: https://hub.thalesgomes.com/api
     networks:
+      - easypanel
       - easypanel-n8n
     expose:
       - "80"
