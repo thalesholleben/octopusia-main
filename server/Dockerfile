@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Instalar OpenSSL e dependências necessárias para o Prisma
+RUN apk add --no-cache openssl libc6-compat
+
 # Copiar package files
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -23,6 +26,9 @@ RUN npm run build
 FROM node:20-alpine
 
 WORKDIR /app
+
+# Instalar OpenSSL e dependências necessárias para o Prisma
+RUN apk add --no-cache openssl libc6-compat
 
 # Copiar node_modules e build do builder
 COPY --from=builder /app/node_modules ./node_modules
