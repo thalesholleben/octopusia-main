@@ -1,19 +1,23 @@
+networks:
+  easypanel-n8n:
+    external: true
+
 services:
   backend:
     build:
       context: ./server
       dockerfile: Dockerfile
+    networks:
+      - easypanel-n8n
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      DATABASE_URL: postgres://n8nuser:Vk2%40esEaYS@n8n_postgres:5432/octopusia?sslmode=disable
+      JWT_SECRET: TEwh2LEpU4mbIJ3MiMykRY0cspX2d87zqkXnegYENKM
+      JWT_EXPIRES_IN: 7d
+      FRONTEND_URL: https://hub.thalesgomes.com
     expose:
       - "3001"
-    ports:
-      - "3001:3001"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
       interval: 30s
@@ -25,10 +29,10 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001/api}
+        VITE_API_URL: https://hub.thalesgomes.com/api
+    networks:
+      - easypanel-n8n
     expose:
       - "80"
-    ports:
-      - "80:80"
     depends_on:
       - backend

@@ -4,7 +4,6 @@ import { PrismaClient } from '@prisma/client';
 import passport from 'passport';
 import { z } from 'zod';
 import { generateToken } from '../utils/jwt.utils';
-import '../types/express';
 
 const prisma = new PrismaClient();
 
