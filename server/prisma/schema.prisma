@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  displayName   String?        @map("display_name")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  financeRecords FinanceRecord[]
+  aiAlerts       AIAlert[]
+
+  @@map("users")
+}
+
+model FinanceRecord {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  valor           Decimal  @db.Decimal(12, 2)
+  de              String?
+  para            String?
+  tipo            String   // 'entrada' | 'saida'
+  categoria       String
+  dataComprovante DateTime @map("data_comprovante") @db.Date
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([dataComprovante])
+  @@map("finance_records")
+}
+
+model AIAlert {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  aviso      String
+  prioridade String   // 'baixa' | 'media' | 'alta'
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("ai_alerts")
+}

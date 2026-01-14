@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+dist
+.env
+.env.local
+.git
+.gitignore
+README.md
+.vscode
+.idea
+*.md
+server/node_modules
+server/dist
+server/.env
+.claude
+supabase
