@@ -12,7 +12,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgres://n8nuser:Vk2%40esEaYS@n8n_postgres:5432/n8n-sql?sslmode=disable
+      DATABASE_URL: postgres://n8nuser:Vk2%40esEaYS@n8n_postgres:5432/octopusia?sslmode=disable
       JWT_SECRET: TEwh2LEpU4mbIJ3MiMykRY0cspX2d87zqkXnegYENKM
       JWT_EXPIRES_IN: 7d
       FRONTEND_URL: https://hub.thalesgomes.com
