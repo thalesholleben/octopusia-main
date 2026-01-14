@@ -1,8 +1,14 @@
+networks:
+  n8n_default:
+    external: true
+
 services:
   backend:
     build:
       context: ./server
       dockerfile: Dockerfile
+    networks:
+      - n8n_default
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -24,6 +30,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: https://hub.thalesgomes.com/api
+    networks:
+      - n8n_default
     expose:
       - "80"
     depends_on:
