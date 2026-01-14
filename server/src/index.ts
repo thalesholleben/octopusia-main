@@ -3,7 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config } from 'dotenv';
 import passport from 'passport';
-import './types/express';
 
 import { configurePassport } from './config/passport';
 import authRoutes from './routes/auth.routes';
