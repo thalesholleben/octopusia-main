@@ -9,7 +9,10 @@
       "Bash(git push:*)",
       "Bash(del nul)",
       "Bash(npx prisma generate:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(dir:*)",
+      "Bash(del favicon.ico)",
+      "Bash(if exist favicon.ico del favicon.ico)"
     ]
   }
 }
