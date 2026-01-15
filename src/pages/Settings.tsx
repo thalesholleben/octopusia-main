@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, FileText } from 'lucide-react';
+import { ArrowLeft, Shield, FileText, Key, MessageCircle, Unlink, Bell } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { userAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,6 +24,26 @@ export default function Settings() {
   const [lastReport, setLastReport] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // Chat info states
+  const [chatInfo, setChatInfo] = useState<{
+    chatId: string | null;
+    chatUsername: string | null;
+    isLinked: boolean;
+  }>({ chatId: null, chatUsername: null, isLinked: false });
+  const [unlinkingChat, setUnlinkingChat] = useState(false);
+
+  // Notification preferences states
+  const [notifyEmail, setNotifyEmail] = useState(true);
+  const [notifyChat, setNotifyChat] = useState(true);
+  const [notifyDashboard, setNotifyDashboard] = useState(true);
+  const [savingNotifications, setSavingNotifications] = useState(false);
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -38,6 +60,13 @@ export default function Settings() {
         setSubscription(data.subscription as 'none' | 'basic' | 'pro');
         setReportPreference(data.report as 'none' | 'simple' | 'advanced');
         setLastReport(data.lastReport);
+        setNotifyEmail(data.notifyEmail);
+        setNotifyChat(data.notifyChat);
+        setNotifyDashboard(data.notifyDashboard);
+
+        // Carregar info do chat
+        const chatData = await userAPI.getChatInfo();
+        setChatInfo(chatData.data);
       } catch (error) {
         toast.error('Erro ao carregar configurações');
       } finally {
@@ -60,6 +89,75 @@ export default function Settings() {
       toast.error(message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    // Validação frontend
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Nova senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await userAPI.changePassword(currentPassword, newPassword);
+      toast.success('Senha alterada com sucesso!');
+      // Limpar campos
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Erro ao alterar senha';
+      toast.error(message);
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleUnlinkChat = async () => {
+    if (!confirm('Tem certeza que deseja desvincular seu chat? Você precisará vinculá-lo novamente para usar o bot.')) {
+      return;
+    }
+
+    setUnlinkingChat(true);
+    try {
+      await userAPI.unlinkChat();
+      toast.success('Chat desvinculado com sucesso!');
+      // Atualizar estado
+      setChatInfo({ chatId: null, chatUsername: null, isLinked: false });
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Erro ao desvincular chat';
+      toast.error(message);
+    } finally {
+      setUnlinkingChat(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    setSavingNotifications(true);
+    try {
+      await userAPI.updateNotificationPreferences({
+        notifyEmail,
+        notifyChat,
+        notifyDashboard,
+      });
+      toast.success('Preferências de notificação atualizadas!');
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Erro ao salvar preferências';
+      toast.error(message);
+    } finally {
+      setSavingNotifications(false);
     }
   };
 
@@ -192,6 +290,182 @@ export default function Settings() {
                 className="w-full sm:w-auto"
               >
                 {saving ? 'Salvando...' : 'Salvar Preferências'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Security Card - Change Password */}
+          <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                <CardTitle>Segurança</CardTitle>
+              </div>
+              <CardDescription>Altere sua senha de acesso</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Senha Atual</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="bg-secondary/50"
+                  placeholder="Digite sua senha atual"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Nova Senha</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="bg-secondary/50"
+                  placeholder="Digite a nova senha"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="bg-secondary/50"
+                  placeholder="Digite a nova senha novamente"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                A senha deve ter no mínimo 6 caracteres
+              </p>
+              <Button
+                onClick={handleChangePassword}
+                disabled={changingPassword}
+                className="w-full sm:w-auto"
+              >
+                {changingPassword ? 'Alterando...' : 'Alterar Senha'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Chat Management Card */}
+          <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <CardTitle>Chat Vinculado</CardTitle>
+              </div>
+              <CardDescription>Gerencie a vinculação do seu chat</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {chatInfo.isLinked ? (
+                <>
+                  <div className="p-4 bg-secondary/30 rounded-lg border border-border space-y-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Chat ID</p>
+                      <p className="text-sm font-mono">{chatInfo.chatId}</p>
+                    </div>
+                    {chatInfo.chatUsername && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Username</p>
+                        <p className="text-sm">@{chatInfo.chatUsername}</p>
+                      </div>
+                    )}
+                    <div className="pt-2">
+                      <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
+                        Conectado
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleUnlinkChat}
+                    disabled={unlinkingChat}
+                    variant="destructive"
+                    className="w-full sm:w-auto gap-2"
+                  >
+                    <Unlink className="w-4 h-4" />
+                    {unlinkingChat ? 'Desvinculando...' : 'Desvincular Chat'}
+                  </Button>
+                </>
+              ) : (
+                <div className="p-4 bg-secondary/20 rounded-lg border border-border text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum chat vinculado. Use o bot para vincular sua conta.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Notification Preferences Card */}
+          <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '500ms', animationFillMode: 'forwards' }}>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-primary" />
+                <CardTitle>Notificações</CardTitle>
+              </div>
+              <CardDescription>Configure como deseja receber alertas da IA</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="notifyEmail">Notificações por Email</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Receber alertas da IA por email
+                    </p>
+                  </div>
+                  <Switch
+                    id="notifyEmail"
+                    checked={notifyEmail}
+                    onCheckedChange={setNotifyEmail}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="notifyChat">Notificações pelo Chat</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Receber alertas da IA pelo Telegram/WhatsApp
+                    </p>
+                  </div>
+                  <Switch
+                    id="notifyChat"
+                    checked={notifyChat}
+                    onCheckedChange={setNotifyChat}
+                    disabled={!chatInfo.isLinked}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="notifyDashboard">Notificações no Dashboard</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Exibir alertas da IA no painel principal
+                    </p>
+                  </div>
+                  <Switch
+                    id="notifyDashboard"
+                    checked={notifyDashboard}
+                    onCheckedChange={setNotifyDashboard}
+                  />
+                </div>
+              </div>
+
+              {!chatInfo.isLinked && (
+                <p className="text-xs text-muted-foreground bg-secondary/20 p-3 rounded border border-border">
+                  ℹ️ Vincule seu chat para receber notificações pelo Telegram/WhatsApp
+                </p>
+              )}
+
+              <Button
+                onClick={handleSaveNotifications}
+                disabled={savingNotifications}
+                className="w-full sm:w-auto"
+              >
+                {savingNotifications ? 'Salvando...' : 'Salvar Preferências'}
               </Button>
             </CardContent>
           </Card>

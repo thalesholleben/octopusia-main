@@ -65,6 +65,9 @@ export interface User {
   subscription?: 'none' | 'basic' | 'pro';
   report?: 'none' | 'simple' | 'advanced';
   lastReport?: string;
+  notifyEmail?: boolean;
+  notifyChat?: boolean;
+  notifyDashboard?: boolean;
 }
 
 export interface AuthResponse {
@@ -139,6 +142,9 @@ export const userAPI = {
     subscription: string;
     report: string;
     lastReport: string | null;
+    notifyEmail: boolean;
+    notifyChat: boolean;
+    notifyDashboard: boolean;
   }>('/user/settings'),
 
   updateReportPreference: (report: 'none' | 'simple' | 'advanced') =>
@@ -147,4 +153,25 @@ export const userAPI = {
       report: string;
       lastReport: string | null;
     }>('/user/report-preference', { report }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.patch<{ message: string }>('/user/password', { currentPassword, newPassword }),
+
+  getChatInfo: () => api.get<{
+    chatId: string | null;
+    chatUsername: string | null;
+    isLinked: boolean;
+  }>('/user/chat'),
+
+  unlinkChat: () => api.delete<{ message: string }>('/user/chat'),
+
+  updateNotificationPreferences: (preferences: {
+    notifyEmail: boolean;
+    notifyChat: boolean;
+    notifyDashboard: boolean;
+  }) => api.put<{
+    notifyEmail: boolean;
+    notifyChat: boolean;
+    notifyDashboard: boolean;
+  }>('/user/notification-preferences', preferences),
 };
