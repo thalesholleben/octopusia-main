@@ -1,22 +1,22 @@
 export interface FinanceRecord {
-  id: number;
-  client_id: number;
+  id: string;
+  userId: string;
   valor: number;
-  de: string;
-  para: string;
+  de?: string;
+  para?: string;
   tipo: 'entrada' | 'saida';
   categoria: string;
-  data_comprovante: string;
-  created_at: string;
+  dataComprovante: string;
+  createdAt: string;
 }
 
 export interface AIAlert {
-  id: number;
+  id: string;
+  userId: string;
   aviso: string;
-  client_id: number;
   prioridade: 'baixa' | 'media' | 'alta';
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type DateFilterType = 'today' | 'last7days' | 'last30days' | 'thisMonth' | 'custom';

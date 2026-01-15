@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName?: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName?: string, registrationKey?: string) => Promise<void>;
   signOut: () => void;
 }
 
@@ -53,9 +53,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, displayName?: string) => {
+  const signUp = async (email: string, password: string, displayName?: string, registrationKey?: string) => {
     try {
-      const { data } = await authAPI.register(email, password, displayName);
+      const { data } = await authAPI.register(email, password, displayName, registrationKey);
       localStorage.setItem('token', data.token);
       setUser(data.user);
       toast.success('Conta criada com sucesso!');

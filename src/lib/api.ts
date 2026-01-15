@@ -97,8 +97,11 @@ export const authAPI = {
   login: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/login', { email, password }),
 
-  register: (email: string, password: string, displayName?: string) =>
-    api.post<AuthResponse>('/auth/register', { email, password, displayName }),
+  register: (email: string, password: string, displayName?: string, registrationKey?: string) =>
+    api.post<AuthResponse>('/auth/register',
+      { email, password, displayName },
+      { headers: registrationKey ? { 'X-Registration-Key': registrationKey } : {} }
+    ),
 
   me: () => api.get<{ user: User }>('/auth/me'),
 };

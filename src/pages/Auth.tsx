@@ -13,6 +13,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [registrationKey, setRegistrationKey] = useState('');
   const [loading, setLoading] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
@@ -43,7 +44,7 @@ export default function Auth() {
           return;
         }
 
-        await signUp(email, password, displayName);
+        await signUp(email, password, displayName, registrationKey);
       }
     } catch (err) {
       // Errors are already handled by AuthContext with toast
@@ -72,17 +73,34 @@ export default function Auth() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="displayName">Nome</Label>
-                <Input
-                  id="displayName"
-                  type="text"
-                  placeholder="Seu nome"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="bg-muted/50"
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Nome</Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    placeholder="Seu nome"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="bg-muted/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="registrationKey">Chave de Registro</Label>
+                  <Input
+                    id="registrationKey"
+                    type="text"
+                    placeholder="Chave fornecida pelo administrador"
+                    value={registrationKey}
+                    onChange={(e) => setRegistrationKey(e.target.value)}
+                    required
+                    className="bg-muted/50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Solicite a chave de acesso ao administrador do sistema
+                  </p>
+                </div>
+              </>
             )}
             
             <div className="space-y-2">

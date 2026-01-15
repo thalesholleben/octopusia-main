@@ -28,7 +28,7 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
     const monthlyData: Record<string, { saidas: number; entradas: number }> = {};
 
     data.forEach(record => {
-      const date = parseISO(record.data_comprovante);
+      const date = parseISO(record.dataComprovante);
       const monthKey = format(date, 'yyyy-MM');
       
       // Filter by category if selected (not 'all')

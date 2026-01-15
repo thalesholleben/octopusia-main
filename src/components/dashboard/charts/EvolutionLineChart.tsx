@@ -11,7 +11,7 @@ interface EvolutionLineChartProps {
 export function EvolutionLineChart({ data }: EvolutionLineChartProps) {
   // Group data by date
   const dateGroups = data.reduce((acc, record) => {
-    const date = record.data_comprovante;
+    const date = record.dataComprovante;
     if (!acc[date]) {
       acc[date] = { entradas: 0, saidas: 0 };
     }

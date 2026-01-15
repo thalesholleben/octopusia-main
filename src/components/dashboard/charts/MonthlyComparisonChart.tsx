@@ -15,7 +15,7 @@ export function MonthlyComparisonChart({ data }: MonthlyComparisonChartProps) {
 
   // Group by month
   const monthlyData = data.reduce((acc, record) => {
-    const recordDate = parseISO(record.data_comprovante);
+    const recordDate = parseISO(record.dataComprovante);
     const monthKey = format(recordDate, 'yyyy-MM');
     
     if (!acc[monthKey]) {

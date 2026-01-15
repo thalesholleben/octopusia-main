@@ -69,7 +69,9 @@ export const useFinancialData = (filters: FilterOptions) => {
         startDate: format(dateRange.start, 'yyyy-MM-dd'),
         endDate: format(dateRange.end, 'yyyy-MM-dd'),
       }),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 30, // 30 segundos - dados ficam frescos por pouco tempo
+    refetchInterval: 1000 * 60, // Refetch automático a cada 1 minuto
+    refetchOnWindowFocus: true, // Atualiza quando volta para a aba
   });
 
   // Buscar alertas
@@ -80,7 +82,9 @@ export const useFinancialData = (filters: FilterOptions) => {
   } = useQuery({
     queryKey: ['aiAlerts'],
     queryFn: () => financeAPI.getAlerts(),
-    staleTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: 1000 * 60 * 2, // 2 minutos
+    refetchInterval: 1000 * 60 * 3, // Refetch a cada 3 minutos
+    refetchOnWindowFocus: true,
   });
 
   const records = recordsData?.data.records || [];

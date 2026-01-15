@@ -20,6 +20,7 @@ services:
       JWT_SECRET: TEwh2LEpU4mbIJ3MiMykRY0cspX2d87zqkXnegYENKM
       JWT_EXPIRES_IN: 7d
       FRONTEND_URL: https://hub.thalesgomes.com
+      REGISTRATION_KEY: octopus_reg_key_2026_secure_v1
     expose:
       - "3001"
     healthcheck:

@@ -22,37 +22,27 @@ import { CategoryEvolutionChart } from '@/components/dashboard/charts/CategoryEv
 import { useFinancialData } from '@/hooks/useFinancialData';
 import { useAuth } from '@/contexts/AuthContext';
 import { DateFilterType } from '@/types/financial';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useQuery } from '@tanstack/react-query';
-import { financeAPI } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 const Index = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [dateFilter, setDateFilter] = useState<{
     type: DateFilterType;
     startDate?: Date;
     endDate?: Date;
   }>({ type: 'last30days' });
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
-
-  // Buscar lista de clientes
-  const { data: clientsData } = useQuery({
-    queryKey: ['clients'],
-    queryFn: () => financeAPI.getClients(),
-    enabled: !!user,
-  });
-
-  const clients = clientsData?.data.clients || [];
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Buscar dados financeiros
   const { records, alerts, kpis, chartData, isLoading, error } = useFinancialData({
     filterType: dateFilter.type,
     startDate: dateFilter.startDate,
     endDate: dateFilter.endDate,
-    selectedClient,
   });
 
   // Redirect to auth if not logged in
@@ -72,6 +62,19 @@ const Index = () => {
   const handleSignOut = async () => {
     signOut();
     navigate('/auth');
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['financeRecords'] });
+      await queryClient.invalidateQueries({ queryKey: ['aiAlerts'] });
+      toast.success('Dados atualizados com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao atualizar dados');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Show loading while checking auth
@@ -129,7 +132,7 @@ const Index = () => {
       <main className="container px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Filters Section */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col gap-4 mb-4 sm:mb-6">
+          <div className="flex flex-col gap-3 sm:gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard Financeiro</h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -139,9 +142,8 @@ const Index = () => {
             <FilterBar
               dateFilter={dateFilter}
               onDateFilterChange={setDateFilter}
-              selectedClient={selectedClient}
-              onClientChange={setSelectedClient}
-              clients={clients}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
             />
           </div>
         </div>

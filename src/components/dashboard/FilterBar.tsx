@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, ChevronDown, Phone, CalendarDays } from 'lucide-react';
+import { ChevronDown, CalendarDays, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,9 +21,8 @@ import { cn } from '@/lib/utils';
 interface FilterBarProps {
   dateFilter: DateFilter;
   onDateFilterChange: (filter: DateFilter) => void;
-  selectedClient: number | null;
-  onClientChange: (clientId: number | null) => void;
-  clients: { id: number; label: string }[];
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 const dateFilterLabels: Record<DateFilterType, string> = {
@@ -45,9 +44,8 @@ const dateFilterLabelsFull: Record<DateFilterType, string> = {
 export function FilterBar({
   dateFilter,
   onDateFilterChange,
-  selectedClient,
-  onClientChange,
-  clients,
+  onRefresh,
+  isRefreshing = false,
 }: FilterBarProps) {
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [tempStartDate, setTempStartDate] = useState<Date | undefined>(dateFilter.startDate);
@@ -71,10 +69,6 @@ export function FilterBar({
       setCustomDateOpen(false);
     }
   };
-
-  const selectedClientLabel = selectedClient
-    ? clients.find(c => c.id === selectedClient)?.label || 'Selecionar'
-    : 'Todos';
 
   const getDateFilterDisplay = () => {
     if (dateFilter.type === 'custom' && dateFilter.startDate && dateFilter.endDate) {
@@ -116,78 +110,69 @@ export function FilterBar({
       {/* Custom Date Popover */}
       <Popover open={customDateOpen} onOpenChange={setCustomDateOpen}>
         <PopoverTrigger asChild>
-          <span />
+          <span className="hidden" />
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-4" align="start">
+        <PopoverContent className="w-auto p-4" align="start" sideOffset={8}>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Data inicial</label>
-              <CalendarComponent
-                mode="single"
-                selected={tempStartDate}
-                onSelect={setTempStartDate}
-                locale={ptBR}
-                className="rounded-md border pointer-events-auto"
-              />
+            <h4 className="font-medium text-sm text-foreground">Selecionar Periodo</h4>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Data inicial</label>
+                <CalendarComponent
+                  mode="single"
+                  selected={tempStartDate}
+                  onSelect={setTempStartDate}
+                  locale={ptBR}
+                  disabled={(date) => date > new Date()}
+                  className="rounded-md border pointer-events-auto"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Data final</label>
+                <CalendarComponent
+                  mode="single"
+                  selected={tempEndDate}
+                  onSelect={setTempEndDate}
+                  locale={ptBR}
+                  disabled={(date) =>
+                    date > new Date() || (tempStartDate ? date < tempStartDate : false)
+                  }
+                  className="rounded-md border pointer-events-auto"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Data final</label>
-              <CalendarComponent
-                mode="single"
-                selected={tempEndDate}
-                onSelect={setTempEndDate}
-                locale={ptBR}
-                className="rounded-md border pointer-events-auto"
-              />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCustomDateOpen(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCustomDateApply}
+                className="flex-1"
+                disabled={!tempStartDate || !tempEndDate}
+              >
+                Aplicar
+              </Button>
             </div>
-            <Button 
-              onClick={handleCustomDateApply} 
-              className="w-full"
-              disabled={!tempStartDate || !tempEndDate}
-            >
-              Aplicar
-            </Button>
           </div>
         </PopoverContent>
       </Popover>
 
-      {/* Client Filter */}
-      {clients.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="h-8 sm:h-10 px-2 sm:px-4 bg-secondary/50 border-border hover:bg-secondary hover:border-primary/50 transition-all text-xs sm:text-sm"
-            >
-              <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-primary" />
-              <span className="max-w-[80px] sm:max-w-none truncate">{selectedClientLabel}</span>
-              <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1 sm:ml-2 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem
-              onClick={() => onClientChange(null)}
-              className={cn(
-                'cursor-pointer',
-                selectedClient === null && 'bg-primary/10 text-primary'
-              )}
-            >
-              Todos os clientes
-            </DropdownMenuItem>
-            {clients.map((client) => (
-              <DropdownMenuItem
-                key={client.id}
-                onClick={() => onClientChange(client.id)}
-                className={cn(
-                  'cursor-pointer font-mono text-sm',
-                  selectedClient === client.id && 'bg-primary/10 text-primary'
-                )}
-              >
-                {client.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Refresh Button */}
+      {onRefresh && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="gap-1 sm:gap-2 h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Atualizar</span>
+        </Button>
       )}
     </div>
   );
