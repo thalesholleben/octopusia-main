@@ -25,6 +25,7 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ error?: string }>) => {
     const message = error.response?.data?.error || 'Erro ao conectar com o servidor';
+    const isAuthEndpoint = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register') || error.config?.url?.includes('/auth/forgot-password');
 
     // Log detalhado para debug
     console.error('API Error:', {
@@ -34,7 +35,12 @@ api.interceptors.response.use(
       message,
     });
 
-    // Mostrar toast de erro para o usuário
+    // Para endpoints de autenticação, deixa o AuthContext lidar com o erro
+    if (isAuthEndpoint) {
+      return Promise.reject(error);
+    }
+
+    // Mostrar toast de erro para o usuário (exceto endpoints de auth)
     if (error.response?.status === 401) {
       toast.error('Sessão expirada. Faça login novamente.');
       localStorage.removeItem('token');
@@ -56,6 +62,9 @@ export interface User {
   id: string;
   email: string;
   displayName?: string;
+  subscription?: 'none' | 'basic' | 'pro';
+  report?: 'none' | 'simple' | 'advanced';
+  lastReport?: string;
 }
 
 export interface AuthResponse {
@@ -104,6 +113,9 @@ export const authAPI = {
     ),
 
   me: () => api.get<{ user: User }>('/auth/me'),
+
+  forgotPassword: (email: string) =>
+    api.post<{ message: string }>('/auth/forgot-password', { email }),
 };
 
 export const financeAPI = {
@@ -120,4 +132,19 @@ export const financeAPI = {
     api.get<Statistics>('/finance/statistics', { params }),
 
   getClients: () => api.get<{ clients: string[] }>('/finance/clients'),
+};
+
+export const userAPI = {
+  getSettings: () => api.get<{
+    subscription: string;
+    report: string;
+    lastReport: string | null;
+  }>('/user/settings'),
+
+  updateReportPreference: (report: 'none' | 'simple' | 'advanced') =>
+    api.put<{
+      subscription: string;
+      report: string;
+      lastReport: string | null;
+    }>('/user/report-preference', { report }),
 };

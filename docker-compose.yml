@@ -21,6 +21,7 @@ services:
       JWT_EXPIRES_IN: 7d
       FRONTEND_URL: https://hub.thalesgomes.com
       REGISTRATION_KEY: octopus_reg_key_2026_secure_v1
+      PASSWORD_RECOVERY_WEBHOOK_URL: ${PASSWORD_RECOVERY_WEBHOOK_URL:-}
     expose:
       - "3001"
     healthcheck:

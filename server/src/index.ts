@@ -7,6 +7,7 @@ import passport from 'passport';
 import { configurePassport } from './config/passport';
 import authRoutes from './routes/auth.routes';
 import financeRoutes from './routes/finance.routes';
+import userRoutes from './routes/user.routes';
 import { errorHandler } from './middlewares/errorHandler.middleware';
 
 config();
@@ -29,6 +30,7 @@ configurePassport();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/user', userRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FinanceRecord } from '@/types/financial';
-import { format, parseISO, startOfMonth, subMonths } from 'date-fns';
+import { format, parseISO, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart3 } from 'lucide-react';
 
@@ -9,38 +10,52 @@ interface MonthlyComparisonChartProps {
 }
 
 export function MonthlyComparisonChart({ data }: MonthlyComparisonChartProps) {
-  const now = new Date();
-  const currentMonth = startOfMonth(now);
-  const previousMonth = subMonths(currentMonth, 1);
+  const chartData = useMemo(() => {
+    const now = new Date();
 
-  // Group by month
-  const monthlyData = data.reduce((acc, record) => {
-    const recordDate = parseISO(record.dataComprovante);
-    const monthKey = format(recordDate, 'yyyy-MM');
-    
-    if (!acc[monthKey]) {
-      acc[monthKey] = { entradas: 0, saidas: 0 };
+    // Generate structure for last 6 months
+    const months: { month: string; monthLabel: string; entradas: number; saidas: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = subMonths(now, i);
+      const monthKey = format(date, 'yyyy-MM');
+      months.push({
+        month: monthKey,
+        monthLabel: format(date, 'MMM/yy', { locale: ptBR }),
+        entradas: 0,
+        saidas: 0,
+      });
     }
-    
-    if (record.tipo === 'entrada') {
-      acc[monthKey].entradas += record.valor;
-    } else {
-      acc[monthKey].saidas += record.valor;
-    }
-    
-    return acc;
-  }, {} as Record<string, { entradas: number; saidas: number }>);
 
-  const chartData = Object.entries(monthlyData)
-    .map(([month, values]) => ({
-      month,
-      monthLabel: format(parseISO(`${month}-01`), 'MMM/yy', { locale: ptBR }),
-      entradas: values.entradas,
-      saidas: values.saidas,
-    }))
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .slice(-6); // Last 6 months
-  
+    // Aggregate data into months
+    data.forEach((record) => {
+      try {
+        const recordDate = parseISO(record.dataComprovante);
+        const monthKey = format(recordDate, 'yyyy-MM');
+        const monthEntry = months.find((m) => m.month === monthKey);
+
+        if (monthEntry) {
+          if (record.tipo === 'entrada') {
+            monthEntry.entradas += record.valor;
+          } else {
+            monthEntry.saidas += record.valor;
+          }
+        }
+      } catch {
+        // Skip invalid dates
+      }
+    });
+
+    // Filter to only show months that have data or are recent (last 3 months always shown)
+    const hasAnyData = months.some((m) => m.entradas > 0 || m.saidas > 0);
+    if (!hasAnyData) {
+      return months.slice(-3); // Show last 3 months if no data
+    }
+
+    // Find first month with data and show from there
+    const firstMonthWithData = months.findIndex((m) => m.entradas > 0 || m.saidas > 0);
+    return months.slice(Math.max(0, firstMonthWithData));
+  }, [data]);
+
   const chartWidth = Math.max(100, chartData.length * 100);
 
   const CustomTooltip = ({ active, payload, label }: any) => {

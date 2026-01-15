@@ -47,8 +47,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(data.user);
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {
-      const message = error.response?.data?.error || 'Erro ao fazer login';
-      toast.error(message);
+      // Always show generic message for security - don't reveal if email or password is wrong
+      toast.error('Email ou senha inválidos. Tente novamente.');
       throw error;
     }
   };

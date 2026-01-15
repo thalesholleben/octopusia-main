@@ -12,6 +12,11 @@ model User {
   email         String         @unique
   password      String
   displayName   String?        @map("display_name")
+  chatId        String?        @unique @map("chat_id")
+  chatUsername  String?        @map("chat_username")
+  subscription  String         @default("none")        // 'none' | 'basic' | 'pro'
+  report        String         @default("none")        // 'none' | 'simple' | 'advanced'
+  lastReport    DateTime?      @map("last_report")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
 

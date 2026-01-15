@@ -1,4 +1,5 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import octopusLogo from '@/assets/octopus-logo.svg';
 import { Button } from '@/components/ui/button';
 
@@ -7,6 +8,7 @@ interface HeaderProps {
 }
 
 export function Header({ onSignOut }: HeaderProps) {
+  const navigate = useNavigate();
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="container px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
@@ -30,11 +32,21 @@ export function Header({ onSignOut }: HeaderProps) {
             <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
             <span className="text-xs text-muted-foreground">Sincronizado</span>
           </div>
-          
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/settings')}
+            className="gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
+          >
+            <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Configurações</span>
+          </Button>
+
           {onSignOut && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onSignOut}
               className="gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
             >

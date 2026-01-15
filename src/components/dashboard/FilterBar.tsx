@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, CalendarDays, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,10 +8,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { DateFilter, DateFilterType } from '@/types/financial';
 import { format } from 'date-fns';
@@ -51,6 +52,14 @@ export function FilterBar({
   const [tempStartDate, setTempStartDate] = useState<Date | undefined>(dateFilter.startDate);
   const [tempEndDate, setTempEndDate] = useState<Date | undefined>(dateFilter.endDate);
 
+  // Sync temp dates when dialog opens
+  useEffect(() => {
+    if (customDateOpen) {
+      setTempStartDate(dateFilter.startDate);
+      setTempEndDate(dateFilter.endDate);
+    }
+  }, [customDateOpen, dateFilter.startDate, dateFilter.endDate]);
+
   const handleDateFilterSelect = (type: DateFilterType) => {
     if (type === 'custom') {
       setCustomDateOpen(true);
@@ -82,8 +91,8 @@ export function FilterBar({
       {/* Date Filter */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="h-8 sm:h-10 px-2 sm:px-4 bg-secondary/50 border-border hover:bg-secondary hover:border-primary/50 transition-all text-xs sm:text-sm"
           >
             <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-primary" />
@@ -107,14 +116,13 @@ export function FilterBar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Custom Date Popover */}
-      <Popover open={customDateOpen} onOpenChange={setCustomDateOpen}>
-        <PopoverTrigger asChild>
-          <span className="hidden" />
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-4" align="start" sideOffset={8}>
+      {/* Custom Date Dialog */}
+      <Dialog open={customDateOpen} onOpenChange={setCustomDateOpen}>
+        <DialogContent className="max-w-fit">
+          <DialogHeader>
+            <DialogTitle>Selecionar Período</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4">
-            <h4 className="font-medium text-sm text-foreground">Selecionar Periodo</h4>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Data inicial</label>
@@ -124,7 +132,7 @@ export function FilterBar({
                   onSelect={setTempStartDate}
                   locale={ptBR}
                   disabled={(date) => date > new Date()}
-                  className="rounded-md border pointer-events-auto"
+                  className="rounded-md border"
                 />
               </div>
               <div className="space-y-2">
@@ -137,7 +145,7 @@ export function FilterBar({
                   disabled={(date) =>
                     date > new Date() || (tempStartDate ? date < tempStartDate : false)
                   }
-                  className="rounded-md border pointer-events-auto"
+                  className="rounded-md border"
                 />
               </div>
             </div>
@@ -158,8 +166,8 @@ export function FilterBar({
               </Button>
             </div>
           </div>
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
 
       {/* Refresh Button */}
       {onRefresh && (
