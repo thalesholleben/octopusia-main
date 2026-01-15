@@ -24,7 +24,7 @@ model User {
   updatedAt     DateTime       @updatedAt @map("updated_at")
 
   financeRecords FinanceRecord[]
-  aiAlerts       AIAlert[]
+  aiAlerts       AiAlert[]
 
   @@map("users")
 }
@@ -47,7 +47,7 @@ model FinanceRecord {
   @@map("finance_records")
 }
 
-model AIAlert {
+model AiAlert {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")
   aviso      String

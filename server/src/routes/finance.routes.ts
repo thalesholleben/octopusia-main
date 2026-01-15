@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getFinanceRecords, getAIAlerts, getStatistics, getClients } from '../controllers/finance.controller';
+import { getFinanceRecords, getAIAlerts, getStatistics, getClients, createFinanceRecord } from '../controllers/finance.controller';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticateJWT);
 
 router.get('/records', getFinanceRecords);
+router.post('/records', createFinanceRecord);
 router.get('/alerts', getAIAlerts);
 router.get('/statistics', getStatistics);
 router.get('/clients', getClients);

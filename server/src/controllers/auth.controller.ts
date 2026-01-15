@@ -1,12 +1,10 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
 import passport from 'passport';
 import { z } from 'zod';
 import axios from 'axios';
 import { generateToken } from '../utils/jwt.utils';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 
 // Schemas de validação
 const registerSchema = z.object({

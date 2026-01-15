@@ -20,9 +20,14 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:8080',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Registration-Key'],
 }));
 app.use(express.json());
 app.use(passport.initialize());
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Passport configuration
 configurePassport();

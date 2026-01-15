@@ -7,7 +7,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }

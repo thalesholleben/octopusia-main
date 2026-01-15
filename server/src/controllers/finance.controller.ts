@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 
 // Schema de validação para filtros
 const filterSchema = z.object({
@@ -10,6 +8,20 @@ const filterSchema = z.object({
   endDate: z.string().optional(),
   tipo: z.enum(['entrada', 'saida']).optional(),
   categoria: z.string().optional(),
+});
+
+// Schema de validação para criação de registro financeiro
+const createRecordSchema = z.object({
+  valor: z.number().positive('Valor deve ser positivo'),
+  de: z.string().optional(),
+  para: z.string().optional(),
+  tipo: z.enum(['entrada', 'saida'], {
+    errorMap: () => ({ message: 'Tipo deve ser "entrada" ou "saida"' })
+  }),
+  categoria: z.string().min(1, 'Categoria é obrigatória'),
+  dataComprovante: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: 'Data inválida'
+  }),
 });
 
 export const getFinanceRecords = async (req: Request, res: Response) => {
@@ -51,7 +63,7 @@ export const getAIAlerts = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
-    const alerts = await prisma.aIAlert.findMany({
+    const alerts = await prisma.aiAlert.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 10, // Últimos 10 alertas
@@ -130,5 +142,35 @@ export const getClients = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get clients error:', error);
     res.status(500).json({ error: 'Erro ao buscar clientes' });
+  }
+};
+
+export const createFinanceRecord = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const data = createRecordSchema.parse(req.body);
+
+    const record = await prisma.financeRecord.create({
+      data: {
+        userId,
+        valor: data.valor,
+        de: data.de,
+        para: data.para,
+        tipo: data.tipo,
+        categoria: data.categoria,
+        dataComprovante: new Date(data.dataComprovante),
+      },
+    });
+
+    res.status(201).json({
+      message: 'Registro financeiro criado com sucesso',
+      record,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    console.error('Create finance record error:', error);
+    res.status(500).json({ error: 'Erro ao criar registro financeiro' });
   }
 };
