@@ -11,7 +11,7 @@ export const Footer = () => {
           <img
             src="/powered-by-syntaxlab.svg"
             alt="Powered by SyntaxLab"
-            style={{ width: '180px', height: 'auto' }}
+            style={{ width: '144px', height: 'auto' }}
           />
         </a>
       </div>
