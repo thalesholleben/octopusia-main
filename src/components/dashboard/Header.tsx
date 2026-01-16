@@ -10,7 +10,7 @@ interface HeaderProps {
 export function Header({ onSignOut }: HeaderProps) {
   const navigate = useNavigate();
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 bg-background/80 backdrop-blur-xl border-b border-border">
+    <header className="fixed top-0 left-0 right-0 z-50 h-20 sm:h-22 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="container px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="relative">
@@ -22,7 +22,7 @@ export function Header({ onSignOut }: HeaderProps) {
               Octopus <span className="text-primary">IA</span>
             </span>
             <span className="hidden sm:block text-[10px] text-muted-foreground uppercase tracking-widest">
-              Controle Financeiro
+              smartFinance - Controle Financeiro
             </span>
           </div>
         </div>
