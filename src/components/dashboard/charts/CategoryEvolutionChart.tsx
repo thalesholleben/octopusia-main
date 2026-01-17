@@ -1,19 +1,30 @@
 import { useState, useMemo } from 'react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  ResponsiveContainer, 
-  Tooltip 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip
 } from 'recharts';
 import { FinanceRecord, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/types/financial';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart3 } from 'lucide-react';
+
+// Helper para fazer parse seguro de data
+const safeParseDateStr = (dateStr: string | null | undefined): Date | null => {
+  if (!dateStr) return null;
+  try {
+    const date = parseISO(dateStr);
+    return isValid(date) ? date : null;
+  } catch {
+    return null;
+  }
+};
 
 interface CategoryEvolutionChartProps {
   data: FinanceRecord[];
@@ -28,9 +39,11 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
     const monthlyData: Record<string, { saidas: number; entradas: number }> = {};
 
     data.forEach(record => {
-      const date = parseISO(record.dataComprovante);
+      const date = safeParseDateStr(record.dataComprovante);
+      if (!date) return; // Skip invalid dates
+
       const monthKey = format(date, 'yyyy-MM');
-      
+
       // Filter by category if selected (not 'all')
       if (selectedCategory !== 'all') {
         if (record.categoria !== selectedCategory) {
@@ -52,12 +65,15 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
     // Sort and format
     return Object.entries(monthlyData)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([monthKey, values]) => ({
-        month: monthKey,
-        monthFormatted: format(parseISO(`${monthKey}-01`), 'MMM/yy', { locale: ptBR }),
-        saidas: values.saidas,
-        entradas: values.entradas,
-      }));
+      .map(([monthKey, values]) => {
+        const monthDate = safeParseDateStr(`${monthKey}-01`);
+        return {
+          month: monthKey,
+          monthFormatted: monthDate ? format(monthDate, 'MMM/yy', { locale: ptBR }) : monthKey,
+          saidas: values.saidas,
+          entradas: values.entradas,
+        };
+      });
   }, [data, selectedCategory]);
 
   // Determine if selected category is expense type

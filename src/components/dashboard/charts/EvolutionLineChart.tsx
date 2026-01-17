@@ -1,8 +1,19 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FinanceRecord } from '@/types/financial';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TrendingUp } from 'lucide-react';
+
+// Helper para formatar data de forma segura
+const safeFormatDate = (dateStr: string, formatStr: string, options?: any): string => {
+  try {
+    const date = parseISO(dateStr);
+    if (!isValid(date)) return dateStr;
+    return format(date, formatStr, options);
+  } catch {
+    return dateStr;
+  }
+};
 
 interface EvolutionLineChartProps {
   data: FinanceRecord[];
@@ -12,6 +23,7 @@ export function EvolutionLineChart({ data }: EvolutionLineChartProps) {
   // Group data by date
   const dateGroups = data.reduce((acc, record) => {
     const date = record.dataComprovante;
+    if (!date) return acc;
     if (!acc[date]) {
       acc[date] = { entradas: 0, saidas: 0 };
     }
@@ -37,7 +49,7 @@ export function EvolutionLineChart({ data }: EvolutionLineChartProps) {
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="text-sm font-medium text-foreground mb-2">
-            {format(parseISO(label), "dd 'de' MMMM", { locale: ptBR })}
+            {safeFormatDate(label, "dd 'de' MMMM", { locale: ptBR })}
           </p>
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center gap-2">
@@ -70,10 +82,10 @@ export function EvolutionLineChart({ data }: EvolutionLineChartProps) {
         <ResponsiveContainer width="100%" height="85%">
           <LineChart data={chartData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              tickFormatter={(value) => format(parseISO(value), 'dd/MM')}
+              tickFormatter={(value) => safeFormatDate(value, 'dd/MM')}
               stroke="hsl(var(--border))"
             />
             <YAxis 

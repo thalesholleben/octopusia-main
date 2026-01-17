@@ -9,8 +9,20 @@ import {
   subMonths,
   isWithinInterval,
   format,
+  isValid,
 } from 'date-fns';
 import type { DateFilterType } from '@/types/financial';
+
+// Helper para criar data segura
+const safeParseDate = (dateStr: string | null | undefined): Date | null => {
+  if (!dateStr) return null;
+  try {
+    const date = new Date(dateStr);
+    return isValid(date) ? date : null;
+  } catch {
+    return null;
+  }
+};
 
 interface FilterOptions {
   filterType: DateFilterType;
@@ -119,12 +131,14 @@ export const useFinancialData = (filters: FilterOptions) => {
       const monthStart = startOfMonth(date);
       const monthEnd = endOfMonth(date);
 
-      const monthRecords = records.filter((r) =>
-        isWithinInterval(new Date(r.dataComprovante), {
+      const monthRecords = records.filter((r) => {
+        const recordDate = safeParseDate(r.dataComprovante);
+        if (!recordDate) return false;
+        return isWithinInterval(recordDate, {
           start: monthStart,
           end: monthEnd,
-        })
-      );
+        });
+      });
 
       const monthSaidas = monthRecords
         .filter((r) => r.tipo === 'saida')
@@ -139,12 +153,14 @@ export const useFinancialData = (filters: FilterOptions) => {
     const prevMonthStart = subMonths(dateRange.start, 1);
     const prevMonthEnd = subMonths(dateRange.end, 1);
 
-    const prevMonthRecords = records.filter((r) =>
-      isWithinInterval(new Date(r.dataComprovante), {
+    const prevMonthRecords = records.filter((r) => {
+      const recordDate = safeParseDate(r.dataComprovante);
+      if (!recordDate) return false;
+      return isWithinInterval(recordDate, {
         start: prevMonthStart,
         end: prevMonthEnd,
-      })
-    );
+      });
+    });
 
     const prevMonthSaidas = prevMonthRecords
       .filter((r) => r.tipo === 'saida')
@@ -181,7 +197,10 @@ export const useFinancialData = (filters: FilterOptions) => {
 
     // Evolução temporal (agrupado por data)
     const evolutionData = filteredRecords.reduce((acc, r) => {
-      const date = format(new Date(r.dataComprovante), 'dd/MM');
+      const recordDate = safeParseDate(r.dataComprovante);
+      if (!recordDate) return acc;
+
+      const date = format(recordDate, 'dd/MM');
       if (!acc[date]) {
         acc[date] = { date, entradas: 0, saidas: 0 };
       }
