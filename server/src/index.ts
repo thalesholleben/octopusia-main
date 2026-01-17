@@ -15,6 +15,9 @@ config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Desabilitar ETag (evita 304 Not Modified)
+app.set('etag', false);
+
 // Middlewares
 app.use(helmet());
 app.use(cors({
@@ -31,6 +34,17 @@ app.options('*', cors());
 
 // Passport configuration
 configurePassport();
+
+// Middleware no-cache para API (evita 304 Not Modified)
+app.use('/api', (req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

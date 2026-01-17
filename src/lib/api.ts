@@ -11,12 +11,21 @@ const api = axios.create({
   },
 });
 
-// Adicionar token JWT em todas as requests
+// Adicionar token JWT em todas as requests + cache-busting
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Adicionar timestamp para evitar cache do navegador (GET requests)
+  if (config.method === 'get') {
+    config.params = {
+      ...config.params,
+      _t: Date.now()
+    };
+  }
+
   return config;
 });
 

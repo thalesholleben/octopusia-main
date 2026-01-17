@@ -25,6 +25,7 @@ const updateNotificationPreferencesSchema = z.object({
 export const getSettings = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
+    console.log('[getSettings] userId:', userId);  // DEBUG LOG
 
     if (!userId) {
       return res.status(401).json({ error: 'Não autenticado' });
@@ -41,6 +42,7 @@ export const getSettings = async (req: Request, res: Response) => {
         notifyDashboard: true,
       }
     });
+    console.log('[getSettings] user data:', user);  // DEBUG LOG
 
     if (!user) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -48,7 +50,7 @@ export const getSettings = async (req: Request, res: Response) => {
 
     res.json(user);
   } catch (error) {
-    console.error('Get settings error:', error);
+    console.error('[getSettings] error:', error);
     res.status(500).json({ error: 'Erro ao buscar configurações' });
   }
 };
@@ -153,6 +155,7 @@ export const changePassword = async (req: Request, res: Response) => {
 export const getChatInfo = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
+    console.log('[getChatInfo] userId:', userId);  // DEBUG LOG
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -161,6 +164,7 @@ export const getChatInfo = async (req: Request, res: Response) => {
         chatUsername: true,
       }
     });
+    console.log('[getChatInfo] user data:', user);  // DEBUG LOG
 
     if (!user) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -172,7 +176,7 @@ export const getChatInfo = async (req: Request, res: Response) => {
       isLinked: !!user.chatId
     });
   } catch (error) {
-    console.error('Erro ao buscar info do chat:', error);
+    console.error('[getChatInfo] error:', error);
     res.status(500).json({ error: 'Erro ao buscar informações do chat' });
   }
 };

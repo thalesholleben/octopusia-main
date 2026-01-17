@@ -27,6 +27,9 @@ const createRecordSchema = z.object({
 export const getFinanceRecords = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
+    console.log('[getFinanceRecords] userId:', userId);  // DEBUG LOG
+    console.log('[getFinanceRecords] query params:', req.query);  // DEBUG LOG
+
     const { startDate, endDate, tipo, categoria } = filterSchema.parse(req.query);
 
     const where: any = { userId };
@@ -48,13 +51,14 @@ export const getFinanceRecords = async (req: Request, res: Response) => {
       where,
       orderBy: { dataComprovante: 'desc' },
     });
+    console.log('[getFinanceRecords] found records:', records.length);  // DEBUG LOG
 
     res.json({ records });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.errors[0].message });
     }
-    console.error('Get finance records error:', error);
+    console.error('[getFinanceRecords] error:', error);
     res.status(500).json({ error: 'Erro ao buscar registros financeiros' });
   }
 };
@@ -62,16 +66,18 @@ export const getFinanceRecords = async (req: Request, res: Response) => {
 export const getAIAlerts = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
+    console.log('[getAIAlerts] userId:', userId);  // DEBUG LOG
 
     const alerts = await prisma.aiAlert.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 10, // Últimos 10 alertas
     });
+    console.log('[getAIAlerts] found alerts:', alerts.length);  // DEBUG LOG
 
     res.json({ alerts });
   } catch (error) {
-    console.error('Get AI alerts error:', error);
+    console.error('[getAIAlerts] error:', error);
     res.status(500).json({ error: 'Erro ao buscar alertas' });
   }
 };
