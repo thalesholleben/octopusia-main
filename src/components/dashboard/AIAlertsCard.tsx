@@ -147,7 +147,13 @@ export function AIAlertsCard({ alerts }: AIAlertsCardProps) {
                         {config.label}
                       </span>
                       <span className="text-[9px] sm:text-[10px] text-muted-foreground">
-                        {format(new Date(alert.createdAt), "dd MMM", { locale: ptBR })}
+                        {(() => {
+                          try {
+                            return format(new Date(alert.createdAt), "dd MMM", { locale: ptBR });
+                          } catch (e) {
+                            return '--';
+                          }
+                        })()}
                       </span>
                     </div>
                   </div>

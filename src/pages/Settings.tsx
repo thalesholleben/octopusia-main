@@ -279,7 +279,13 @@ export default function Settings() {
                 <div className="p-3 bg-secondary/20 rounded-lg border border-border">
                   <p className="text-xs text-muted-foreground mb-1">Último relatório enviado</p>
                   <p className="text-sm font-medium">
-                    {format(new Date(lastReport), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                    {(() => {
+                      try {
+                        return format(new Date(lastReport), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+                      } catch (e) {
+                        return 'Data inválida';
+                      }
+                    })()}
                   </p>
                 </div>
               )}
