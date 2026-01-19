@@ -19,7 +19,7 @@ export interface AIAlert {
   updatedAt: string;
 }
 
-export type DateFilterType = 'today' | 'last7days' | 'last30days' | 'thisMonth' | 'custom';
+export type DateFilterType = 'today' | 'last7days' | 'last30days' | 'last60days' | 'thisMonth' | 'custom';
 
 export interface DateFilter {
   type: DateFilterType;

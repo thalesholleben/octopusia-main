@@ -50,6 +50,9 @@ export const useFinancialData = (filters: FilterOptions) => {
       case 'last30days':
         start = subDays(today, 30);
         break;
+      case 'last60days':
+        start = subDays(today, 60);
+        break;
       case 'thisMonth':
         start = startOfMonth(today);
         break;

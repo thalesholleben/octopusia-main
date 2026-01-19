@@ -5,15 +5,15 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  Tooltip
+  Tooltip,
+  Legend
 } from 'recharts';
-import { FinanceRecord, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/types/financial';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { FinanceRecord } from '@/types/financial';
 import { format, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart3 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 // Helper para fazer parse seguro de data
 const safeParseDateStr = (dateStr: string | null | undefined): Date | null => {
@@ -30,150 +30,156 @@ interface CategoryEvolutionChartProps {
   data: FinanceRecord[];
 }
 
+const COLORS = [
+  '#d97757', '#22c55e', '#eab308', '#3b82f6', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
+  '#84cc16', '#a855f7', '#ef4444', '#10b981', '#f59e0b'
+];
+
 export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showIncome, setShowIncome] = useState(false);
+  const [showType, setShowType] = useState<'saidas' | 'ambos'>('saidas');
 
   const chartData = useMemo(() => {
-    // Group data by month
-    const monthlyData: Record<string, { saidas: number; entradas: number }> = {};
+    // Group data by month and category
+    const monthlyData: Record<string, Record<string, { saidas: number; entradas: number }>> = {};
 
     data.forEach(record => {
       const date = safeParseDateStr(record.dataComprovante);
-      if (!date) return; // Skip invalid dates
+      if (!date) return;
 
       const monthKey = format(date, 'yyyy-MM');
 
-      // Filter by category if selected (not 'all')
-      if (selectedCategory !== 'all') {
-        if (record.categoria !== selectedCategory) {
-          return;
-        }
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = {};
       }
 
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { saidas: 0, entradas: 0 };
+      if (!monthlyData[monthKey][record.categoria]) {
+        monthlyData[monthKey][record.categoria] = { saidas: 0, entradas: 0 };
       }
 
       if (record.tipo === 'saida') {
-        monthlyData[monthKey].saidas += record.valor;
+        monthlyData[monthKey][record.categoria].saidas += record.valor;
       } else {
-        monthlyData[monthKey].entradas += record.valor;
+        monthlyData[monthKey][record.categoria].entradas += record.valor;
       }
     });
 
-    // Sort and format
+    // Convert to array format for Recharts
     return Object.entries(monthlyData)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([monthKey, values]) => {
+      .map(([monthKey, categories]) => {
         const monthDate = safeParseDateStr(`${monthKey}-01`);
-        return {
+        const result: any = {
           month: monthKey,
           monthFormatted: monthDate ? format(monthDate, 'MMM/yy', { locale: ptBR }) : monthKey,
-          saidas: values.saidas,
-          entradas: values.entradas,
         };
-      });
-  }, [data, selectedCategory]);
 
-  // Determine if selected category is expense type
-  const isExpenseCategory = selectedCategory === 'all' || 
-    (EXPENSE_CATEGORIES as readonly string[]).includes(selectedCategory);
-  
-  const isIncomeCategory = (INCOME_CATEGORIES as readonly string[]).includes(selectedCategory);
+        // Add data for each category
+        Object.entries(categories).forEach(([categoria, values]) => {
+          if (showType === 'saidas') {
+            result[categoria] = values.saidas;
+          } else {
+            // Para "ambos", soma entradas + saidas
+            result[categoria] = values.entradas + values.saidas;
+          }
+        });
+
+        return result;
+      });
+  }, [data, showType]);
+
+  // Get top 8 categories by total value
+  const topCategories = useMemo(() => {
+    const categoryTotals: Record<string, number> = {};
+
+    chartData.forEach(month => {
+      Object.entries(month).forEach(([key, value]) => {
+        if (key !== 'month' && key !== 'monthFormatted' && typeof value === 'number') {
+          categoryTotals[key] = (categoryTotals[key] || 0) + value;
+        }
+      });
+    });
+
+    return Object.entries(categoryTotals)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 8)
+      .map(([cat]) => cat);
+  }, [chartData]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg max-h-64 overflow-y-auto">
           <p className="text-sm font-medium text-foreground mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: R$ {entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          ))}
+          <div className="space-y-1">
+            {payload
+              .sort((a: any, b: any) => b.value - a.value)
+              .map((entry: any, index: number) => (
+                <div key={index} className="flex items-center gap-2">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span className="text-xs text-muted-foreground truncate max-w-[100px]">{entry.name}:</span>
+                  <span className="text-xs font-medium text-foreground">
+                    R$ {entry.value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+              ))}
+          </div>
         </div>
       );
     }
     return null;
   };
 
-  const hasData = chartData.length > 0 && chartData.some(d => d.saidas > 0 || d.entradas > 0);
+  const hasData = chartData.length > 0 && topCategories.length > 0;
 
   return (
     <div className="card-float p-4 sm:p-6 h-[350px] sm:h-[400px] flex flex-col opacity-0 animate-fade-up" style={{ animationDelay: '1200ms', animationFillMode: 'forwards' }}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 shrink-0">
         <h3 className="text-base sm:text-lg font-semibold text-foreground">Evolução por Categoria</h3>
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="flex items-center gap-2">
-            <Switch 
-              id="showIncome" 
-              checked={showIncome}
-              onCheckedChange={setShowIncome}
-            />
-            <Label htmlFor="showIncome" className="text-xs text-muted-foreground cursor-pointer">
-              Entradas
+
+        <RadioGroup value={showType} onValueChange={(v) => setShowType(v as 'saidas' | 'ambos')} className="flex gap-4">
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="saidas" id="saidas" />
+            <Label htmlFor="saidas" className="text-xs text-muted-foreground cursor-pointer font-normal">
+              Apenas Saídas
             </Label>
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[140px] sm:w-[160px] h-8 text-xs">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-xs font-medium">
-                Todas Categorias
-              </SelectItem>
-              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1 pt-2">
-                Saídas
-              </div>
-              {EXPENSE_CATEGORIES.map(cat => (
-                <SelectItem key={cat} value={cat} className="text-xs">
-                  {cat}
-                </SelectItem>
-              ))}
-              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1 pt-2">
-                Entradas
-              </div>
-              {INCOME_CATEGORIES.map(cat => (
-                <SelectItem key={cat} value={cat} className="text-xs">
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="ambos" id="ambos" />
+            <Label htmlFor="ambos" className="text-xs text-muted-foreground cursor-pointer font-normal">
+              Entradas + Saídas
+            </Label>
+          </div>
+        </RadioGroup>
       </div>
-      
+
       {!hasData ? (
         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
           <BarChart3 className="w-12 h-12 opacity-30" />
-          <p className="text-sm text-center">
-            {selectedCategory === 'all' 
-              ? 'Nenhum dado disponível para o período' 
-              : `Sem dados para "${selectedCategory}"`}
-          </p>
+          <p className="text-sm text-center">Nenhum dado disponível para o período</p>
         </div>
       ) : (
         <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorSaidasEvol" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorEntradasEvol" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0}/>
-                </linearGradient>
+                {topCategories.map((cat, index) => (
+                  <linearGradient key={cat} id={`color${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0}/>
+                  </linearGradient>
+                ))}
               </defs>
-              <XAxis 
-                dataKey="monthFormatted" 
+              <XAxis
+                dataKey="monthFormatted"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
               />
-              <YAxis 
+              <YAxis
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
@@ -181,32 +187,25 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
                 width={45}
               />
               <Tooltip content={<CustomTooltip />} />
-              
-              {(isExpenseCategory || selectedCategory === 'all') && !isIncomeCategory && (
+              <Legend
+                wrapperStyle={{ fontSize: '10px', paddingTop: '8px' }}
+                iconType="circle"
+                iconSize={8}
+              />
+
+              {topCategories.map((cat, index) => (
                 <Area
+                  key={cat}
                   type="monotone"
-                  dataKey="saidas"
-                  name="Saídas"
-                  stroke="hsl(var(--destructive))"
+                  dataKey={cat}
+                  name={cat}
+                  stroke={COLORS[index % COLORS.length]}
                   strokeWidth={2}
-                  fill="url(#colorSaidasEvol)"
-                  dot={{ fill: 'hsl(var(--destructive))', strokeWidth: 0, r: 3 }}
-                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  fill={`url(#color${index})`}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0 }}
                 />
-              )}
-              
-              {(showIncome || isIncomeCategory) && (
-                <Area
-                  type="monotone"
-                  dataKey="entradas"
-                  name="Entradas"
-                  stroke="hsl(var(--success))"
-                  strokeWidth={2}
-                  fill="url(#colorEntradasEvol)"
-                  dot={{ fill: 'hsl(var(--success))', strokeWidth: 0, r: 3 }}
-                  activeDot={{ r: 5, strokeWidth: 0 }}
-                />
-              )}
+              ))}
             </AreaChart>
           </ResponsiveContainer>
         </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, FileText, Key, MessageCircle, Unlink, Bell } from 'lucide-react';
+import { ArrowLeft, Shield, FileText, Key, MessageCircle, Unlink, Bell, Lock } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { userAPI } from '@/lib/api';
@@ -436,12 +436,18 @@ export default function Settings() {
                     <p className="text-xs text-muted-foreground">
                       Receber alertas da IA pelo Telegram/WhatsApp
                     </p>
+                    {subscription !== 'pro' && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Lock className="w-3 h-3" />
+                        <span>Disponível apenas no plano Pro</span>
+                      </div>
+                    )}
                   </div>
                   <Switch
                     id="notifyChat"
                     checked={notifyChat}
                     onCheckedChange={setNotifyChat}
-                    disabled={!chatInfo.isLinked}
+                    disabled={subscription !== 'pro' || !chatInfo.isLinked}
                   />
                 </div>
 

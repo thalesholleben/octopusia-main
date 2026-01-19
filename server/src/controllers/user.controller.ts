@@ -207,6 +207,23 @@ export const updateNotificationPreferences = async (req: Request, res: Response)
     const userId = req.user?.id;
     const { notifyEmail, notifyChat, notifyDashboard } = updateNotificationPreferencesSchema.parse(req.body);
 
+    // Buscar usuário para verificar subscription
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { subscription: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Validar: notifyChat só para subscription pro
+    if (notifyChat && user.subscription !== 'pro') {
+      return res.status(403).json({
+        error: 'Notificações por chat disponíveis apenas para assinatura Pro'
+      });
+    }
+
     const updated = await prisma.user.update({
       where: { id: userId },
       data: {

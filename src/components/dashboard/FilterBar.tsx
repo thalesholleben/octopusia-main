@@ -30,6 +30,7 @@ const dateFilterLabels: Record<DateFilterType, string> = {
   today: 'Hoje',
   last7days: '7 dias',
   last30days: '30 dias',
+  last60days: '60 dias',
   thisMonth: 'Mês atual',
   custom: 'Personalizado',
 };
@@ -38,6 +39,7 @@ const dateFilterLabelsFull: Record<DateFilterType, string> = {
   today: 'Hoje',
   last7days: 'Últimos 7 dias',
   last30days: 'Últimos 30 dias',
+  last60days: 'Últimos 60 dias',
   thisMonth: 'Mês atual',
   custom: 'Personalizado',
 };
@@ -149,6 +151,11 @@ export function FilterBar({
                 />
               </div>
             </div>
+            {tempStartDate && tempEndDate && tempEndDate < tempStartDate && (
+              <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                ⚠️ A data final não pode ser anterior à data inicial
+              </p>
+            )}
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -160,7 +167,7 @@ export function FilterBar({
               <Button
                 onClick={handleCustomDateApply}
                 className="flex-1"
-                disabled={!tempStartDate || !tempEndDate}
+                disabled={!tempStartDate || !tempEndDate || tempEndDate < tempStartDate}
               >
                 Aplicar
               </Button>

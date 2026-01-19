@@ -103,10 +103,14 @@ export function AIAlertsCard({ alerts }: AIAlertsCardProps) {
         </div>
       </div>
 
-      <div 
+      <div
         ref={scrollRef}
         className="flex gap-2 sm:gap-3 overflow-x-auto scrollbar-hide pb-1"
-        style={{ scrollSnapType: 'x mandatory' }}
+        style={{
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-x'
+        }}
       >
         {alerts.length === 0 ? (
           <div className="flex-1 text-center py-4 text-muted-foreground">
@@ -122,7 +126,7 @@ export function AIAlertsCard({ alerts }: AIAlertsCardProps) {
               <div
                 key={alert.id}
                 className={cn(
-                  'flex-shrink-0 w-[240px] sm:w-[280px] md:w-[calc(33.333%-8px)] min-w-[240px] p-2.5 sm:p-3 rounded-lg border border-border transition-all hover:border-primary/30',
+                  'flex-shrink-0 w-[300px] sm:w-[280px] md:w-[calc(33.333%-8px)] min-w-[300px] sm:min-w-[280px] md:min-w-0 p-2.5 sm:p-3 rounded-lg border border-border transition-all hover:border-primary/30',
                   config.class,
                   config.bgClass
                 )}

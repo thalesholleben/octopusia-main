@@ -70,7 +70,7 @@ export const getAIAlerts = async (req: Request, res: Response) => {
 
     const alerts = await prisma.aiAlert.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { updatedAt: 'desc' },
       take: 10, // Últimos 10 alertas
     });
     console.log('[getAIAlerts] found alerts:', alerts.length);  // DEBUG LOG
