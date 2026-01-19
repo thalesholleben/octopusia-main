@@ -5,13 +5,37 @@ import { ptBR } from 'date-fns/locale';
 import { TrendingUp } from 'lucide-react';
 
 // Helper para formatar data de forma segura
-const safeFormatDate = (dateStr: string, formatStr: string, options?: any): string => {
+const safeFormatDate = (dateValue: any, formatStr: string, options?: any): string => {
   try {
-    const date = parseISO(dateStr);
-    if (!isValid(date)) return dateStr;
+    // Se for string vazia ou null/undefined, retornar fallback
+    if (!dateValue) return '--';
+
+    let date: Date;
+
+    // Se for número (timestamp), converter para Date
+    if (typeof dateValue === 'number') {
+      date = new Date(dateValue);
+    }
+    // Se for string, tentar parsear
+    else if (typeof dateValue === 'string') {
+      date = parseISO(dateValue);
+    }
+    // Se já for Date
+    else if (dateValue instanceof Date) {
+      date = dateValue;
+    }
+    // Tipo desconhecido
+    else {
+      return String(dateValue);
+    }
+
+    // Validar se a data é válida
+    if (!isValid(date)) return '--';
+
     return format(date, formatStr, options);
-  } catch {
-    return dateStr;
+  } catch (error) {
+    console.error('Erro ao formatar data:', error, dateValue);
+    return '--';
   }
 };
 
@@ -23,7 +47,18 @@ export function EvolutionLineChart({ data }: EvolutionLineChartProps) {
   // Group data by date
   const dateGroups = data.reduce((acc, record) => {
     const date = record.dataComprovante;
+
+    // Validar se a data é válida antes de processar
     if (!date) return acc;
+
+    // Tentar parsear e validar a data
+    try {
+      const parsedDate = parseISO(date);
+      if (!isValid(parsedDate)) return acc;
+    } catch {
+      return acc;
+    }
+
     if (!acc[date]) {
       acc[date] = { entradas: 0, saidas: 0 };
     }

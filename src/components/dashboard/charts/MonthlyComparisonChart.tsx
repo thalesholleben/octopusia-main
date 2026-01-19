@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FinanceRecord } from '@/types/financial';
-import { format, parseISO, subMonths } from 'date-fns';
+import { format, parseISO, subMonths, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart3 } from 'lucide-react';
 
@@ -29,7 +29,13 @@ export function MonthlyComparisonChart({ data }: MonthlyComparisonChartProps) {
     // Aggregate data into months
     data.forEach((record) => {
       try {
+        if (!record.dataComprovante) return;
+
         const recordDate = parseISO(record.dataComprovante);
+
+        // Validar se a data é válida
+        if (!isValid(recordDate)) return;
+
         const monthKey = format(recordDate, 'yyyy-MM');
         const monthEntry = months.find((m) => m.month === monthKey);
 
