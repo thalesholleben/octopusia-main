@@ -10,8 +10,7 @@ import {
   Landmark,
   AlertTriangle,
   DollarSign,
-  Percent,
-  Calendar
+  Percent
 } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -27,7 +26,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DateFilterType } from '@/types/financial';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -272,22 +270,15 @@ const Index = () => {
                   ? `Menor: ${formatCurrency(sazonalidadeData.minValue)} | Média: ${formatCurrency(sazonalidadeData.avgValue)}`
                   : undefined
               }
-              icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
+              icon={
+                <Switch
+                  checked={sazonalidadeShowEntradas}
+                  onCheckedChange={setSazonalidadeShowEntradas}
+                />
+              }
               delay={500}
             />
           </div>
-        </div>
-
-        {/* Sazonalidade Toggle */}
-        <div className="flex items-center justify-center gap-3 mb-6 sm:mb-8 p-3 bg-card/50 rounded-lg border border-border/50 w-fit mx-auto">
-          <Label htmlFor="sazonalidade-toggle" className="text-xs sm:text-sm font-medium cursor-pointer">
-            {sazonalidadeShowEntradas ? 'Mostrando Entradas' : 'Mostrando Saídas'}
-          </Label>
-          <Switch
-            id="sazonalidade-toggle"
-            checked={sazonalidadeShowEntradas}
-            onCheckedChange={setSazonalidadeShowEntradas}
-          />
         </div>
 
         {/* AI Alerts Section */}
