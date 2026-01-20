@@ -186,14 +186,20 @@ const Index = () => {
         <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
           {/* First row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            {/* 1. Saldo Total (com Lucro Líquido) */}
+            {/* 1. Saldo Total (Total de Entradas + Lucro) */}
             <KPICard
               title="Saldo Total"
-              value={formatCurrency(kpis.saldo)}
-              subtitle={`Lucro: ${formatCurrency(kpis.lucroLiquido)}`}
-              subtitleVariant={kpis.lucroLiquido >= 0 ? 'positive' : 'negative'}
+              value={formatCurrency(kpis.entradas)}
+              subtitle={
+                <span>
+                  <span className="text-muted-foreground">Lucro: </span>
+                  <span className={kpis.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}>
+                    {formatCurrency(kpis.lucroLiquido)}
+                  </span>
+                </span>
+              }
               icon={<Wallet className="w-4 h-4 sm:w-5 sm:h-5" />}
-              variant={kpis.saldo >= 0 ? 'positive' : 'negative'}
+              variant="positive"
               delay={100}
             />
 

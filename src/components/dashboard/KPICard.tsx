@@ -5,8 +5,7 @@ import { cn } from '@/lib/utils';
 interface KPICardProps {
   title: string;
   value: string;
-  subtitle?: string;
-  subtitleVariant?: 'positive' | 'negative';
+  subtitle?: ReactNode;
   trend?: {
     value: number;
     label: string;
@@ -21,7 +20,6 @@ export function KPICard({
   title,
   value,
   subtitle,
-  subtitleVariant,
   trend,
   icon,
   variant = 'default',
@@ -87,14 +85,9 @@ export function KPICard({
             {value}
           </p>
           {subtitle && (
-            <p className={cn(
-              'text-[9px] sm:text-[10px] truncate font-medium',
-              subtitleVariant === 'positive' && 'text-success',
-              subtitleVariant === 'negative' && 'text-destructive',
-              !subtitleVariant && 'text-muted-foreground'
-            )}>
+            <div className="text-[9px] sm:text-[10px] truncate font-medium text-muted-foreground">
               {subtitle}
-            </p>
+            </div>
           )}
           {trend && (
             <div className="flex items-center gap-1 sm:gap-2">
