@@ -89,7 +89,7 @@ export function KPICard({
             <div className="flex items-center gap-1 sm:gap-2">
               <div className={cn('flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-medium', getTrendClass())}>
                 {getTrendIcon()}
-                <span>{Math.abs(trend.value)}%</span>
+                <span>{Math.abs(trend.value).toFixed(2)}%</span>
               </div>
               <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{trend.label}</p>
             </div>

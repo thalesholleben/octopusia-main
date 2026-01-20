@@ -149,7 +149,8 @@ export default function Settings() {
     try {
       await userAPI.updateNotificationPreferences({
         notifyEmail,
-        notifyChat,
+        // Para planos não-PRO, sempre enviar false para notifyChat
+        notifyChat: subscription === 'pro' ? notifyChat : false,
         notifyDashboard,
       });
       toast.success('Preferências de notificação atualizadas!');
@@ -432,20 +433,22 @@ export default function Settings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label htmlFor="notifyChat">Notificações pelo Chat</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="notifyChat">Notificações pelo Chat</Label>
+                      {subscription !== 'pro' && (
+                        <div className="flex items-center gap-1 text-xs text-amber-500">
+                          <Lock className="w-3 h-3" />
+                          <span>Somente PRO</span>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Receber alertas da IA pelo Telegram/WhatsApp
                     </p>
-                    {subscription !== 'pro' && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Lock className="w-3 h-3" />
-                        <span>Disponível apenas no plano Pro</span>
-                      </div>
-                    )}
                   </div>
                   <Switch
                     id="notifyChat"
-                    checked={notifyChat}
+                    checked={subscription === 'pro' ? notifyChat : false}
                     onCheckedChange={setNotifyChat}
                     disabled={subscription !== 'pro' || !chatInfo.isLinked}
                   />
