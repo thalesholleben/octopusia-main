@@ -4,10 +4,8 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
-  PiggyBank,
   Tag,
   BarChart3,
-  Landmark,
   AlertTriangle,
   DollarSign,
   Percent
@@ -161,10 +159,6 @@ const Index = () => {
     ? chartData.categoryData.reduce((max, cat) => cat.value > max.value ? cat : max)
     : null;
 
-  // Calcular novos KPIs
-  const lucroLiquido = kpis.saldo;
-  const margemLiquida = kpis.entradas > 0 ? (lucroLiquido / kpis.entradas) * 100 : 0;
-
   return (
     <div className="min-h-screen bg-background bg-grid-pattern">
       <Header onSignOut={handleSignOut} />
@@ -188,49 +182,34 @@ const Index = () => {
           </div>
         </div>
 
-        {/* KPI Cards Grid */}
+        {/* KPI Cards Grid - 2 rows × 3 cards */}
         <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-          {/* First row - 3 main cards */}
+          {/* First row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* 1. Saldo Total (com Lucro Líquido) */}
             <KPICard
               title="Saldo Total"
               value={formatCurrency(kpis.saldo)}
+              subtitle={`Lucro: ${formatCurrency(kpis.lucroLiquido)}`}
               icon={<Wallet className="w-4 h-4 sm:w-5 sm:h-5" />}
               variant={kpis.saldo >= 0 ? 'positive' : 'negative'}
               delay={100}
             />
+
+            {/* 2. Margem Líquida (com trend) */}
             <KPICard
-              title="Total de Entradas"
-              value={formatCurrency(kpis.entradas)}
-              icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
-              variant="positive"
+              title="Margem Líquida"
+              value={`${kpis.margemLiquida.toFixed(1)}%`}
+              trend={{
+                value: kpis.variacaoMargem,
+                label: 'vs mês anterior'
+              }}
+              icon={<Percent className="w-4 h-4 sm:w-5 sm:h-5" />}
+              variant={kpis.margemLiquida >= 0 ? 'positive' : 'negative'}
               delay={150}
             />
-            <KPICard
-              title="Total de Saídas"
-              value={formatCurrency(kpis.saidas)}
-              icon={<TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
-              variant="negative"
-              delay={200}
-            />
-          </div>
 
-          {/* Second row - 3 cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <KPICard
-              title="Média Mensal"
-              value={formatCurrency(kpis.mediaMensal)}
-              subtitle="Últimos 6 meses"
-              icon={<PiggyBank className="w-4 h-4 sm:w-5 sm:h-5" />}
-              delay={250}
-            />
-            <KPICard
-              title="Maior Categoria"
-              value={topCategory?.name || '-'}
-              subtitle={topCategory ? formatCurrency(topCategory.value) : undefined}
-              icon={<Tag className="w-4 h-4 sm:w-5 sm:h-5" />}
-              delay={300}
-            />
+            {/* 3. Variação Mensal (não mexe) */}
             <KPICard
               title="Variação Mensal"
               value={`${kpis.variacaoMensal > 0 ? '+' : ''}${kpis.variacaoMensal.toFixed(1)}%`}
@@ -240,28 +219,35 @@ const Index = () => {
               }}
               icon={<BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />}
               variant={kpis.variacaoMensal <= 0 ? 'positive' : 'negative'}
-              delay={350}
+              delay={200}
             />
           </div>
 
-          {/* Third row - 3 new cards */}
+          {/* Second row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* 4. Maior Categoria (não mexe) */}
             <KPICard
-              title="Lucro Líquido"
-              value={formatCurrency(lucroLiquido)}
-              subtitle="Receitas - Custos"
-              icon={<DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />}
-              variant={lucroLiquido >= 0 ? 'positive' : 'negative'}
-              delay={400}
+              title="Maior Categoria"
+              value={topCategory?.name || '-'}
+              subtitle={topCategory ? formatCurrency(topCategory.value) : undefined}
+              icon={<Tag className="w-4 h-4 sm:w-5 sm:h-5" />}
+              delay={250}
             />
+
+            {/* 5. Total de Saídas (com trend) */}
             <KPICard
-              title="Margem Líquida"
-              value={`${margemLiquida.toFixed(1)}%`}
-              subtitle="Lucro / Receitas"
-              icon={<Percent className="w-4 h-4 sm:w-5 sm:h-5" />}
-              variant={margemLiquida >= 0 ? 'positive' : 'negative'}
-              delay={450}
+              title="Total de Saídas"
+              value={formatCurrency(kpis.saidas)}
+              trend={{
+                value: kpis.variacaoSaidas,
+                label: 'vs mês anterior'
+              }}
+              icon={<TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
+              variant="negative"
+              delay={300}
             />
+
+            {/* 6. Sazonalidade (sem bg no toggle) */}
             <KPICard
               title={sazonalidadeShowEntradas ? "Sazonalidade (Entradas)" : "Sazonalidade (Saídas)"}
               value={sazonalidadeData ? formatCurrency(sazonalidadeData.maxValue) : '-'}
@@ -276,7 +262,8 @@ const Index = () => {
                   onCheckedChange={setSazonalidadeShowEntradas}
                 />
               }
-              delay={500}
+              noIconBg
+              delay={350}
             />
           </div>
         </div>

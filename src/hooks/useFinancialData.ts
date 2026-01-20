@@ -169,13 +169,39 @@ export const useFinancialData = (filters: FilterOptions) => {
       .filter((r) => r.tipo === 'saida')
       .reduce((sum, r) => sum + Number(r.valor), 0);
 
+    const prevMonthEntradas = prevMonthRecords
+      .filter((r) => r.tipo === 'entrada')
+      .reduce((sum, r) => sum + Number(r.valor), 0);
+
     const variacaoMensal =
       prevMonthSaidas > 0 ? ((saidas - prevMonthSaidas) / prevMonthSaidas) * 100 : 0;
+
+    // Calcular lucro líquido e margem
+    const lucroLiquido = entradas - saidas;
+    const margemLiquida = entradas > 0 ? (lucroLiquido / entradas) * 100 : 0;
+
+    // Calcular margem do mês anterior
+    const prevMonthLucro = prevMonthEntradas - prevMonthSaidas;
+    const prevMonthMargem = prevMonthEntradas > 0
+      ? (prevMonthLucro / prevMonthEntradas) * 100
+      : 0;
+
+    // Variação da margem (diferença absoluta, não percentual)
+    const variacaoMargem = margemLiquida - prevMonthMargem;
+
+    // Variação de saídas (mesma lógica de variacaoMensal)
+    const variacaoSaidas = prevMonthSaidas > 0
+      ? ((saidas - prevMonthSaidas) / prevMonthSaidas) * 100
+      : 0;
 
     return {
       saldo,
       entradas,
       saidas,
+      lucroLiquido,
+      margemLiquida,
+      variacaoMargem,
+      variacaoSaidas,
       ticketMedio,
       variacaoMensal,
       totalTransacoes: filteredRecords.length,

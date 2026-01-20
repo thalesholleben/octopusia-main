@@ -13,16 +13,18 @@ interface KPICardProps {
   icon: ReactNode;
   variant?: 'default' | 'positive' | 'negative' | 'warning';
   delay?: number;
+  noIconBg?: boolean;
 }
 
-export function KPICard({ 
-  title, 
-  value, 
-  subtitle, 
-  trend, 
+export function KPICard({
+  title,
+  value,
+  subtitle,
+  trend,
   icon,
   variant = 'default',
-  delay = 0 
+  delay = 0,
+  noIconBg = false
 }: KPICardProps) {
   const getTrendIcon = () => {
     if (!trend) return null;
@@ -95,7 +97,7 @@ export function KPICard({
             </div>
           )}
         </div>
-        <div className={cn('p-1.5 sm:p-2 rounded-lg shrink-0', getIconBg())}>
+        <div className={cn('p-1.5 sm:p-2 rounded-lg shrink-0', !noIconBg && getIconBg())}>
           {icon}
         </div>
       </div>
