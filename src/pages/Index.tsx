@@ -247,13 +247,13 @@ const Index = () => {
             {/* 5. Total de Saídas (com trend) */}
             <KPICard
               title="Total de Saídas"
-              value={formatCurrency(kpis.saidas)}
+              value={formatCurrency(Math.abs(kpis.saidas))}
               trend={{
-                value: kpis.variacaoSaidas,
+                value: -kpis.variacaoSaidas,
                 label: 'vs mês anterior'
               }}
               icon={<TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
-              variant={kpis.variacaoSaidas <= 0 ? 'positive' : 'negative'}
+              variant="negative"
               delay={300}
             />
 
