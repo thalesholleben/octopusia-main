@@ -35,11 +35,11 @@ export function MonthlyComparisonChart({ data }: MonthlyComparisonChartProps) {
       // Somar TODAS as entradas e TODAS as saídas (sem filtro de categoria)
       const entradas = monthRecords
         .filter(r => r.tipo === 'entrada')
-        .reduce((sum, r) => sum + r.valor, 0);
+        .reduce((sum, r) => sum + Number(r.valor), 0);
 
       const saidas = monthRecords
         .filter(r => r.tipo === 'saida')
-        .reduce((sum, r) => sum + r.valor, 0);
+        .reduce((sum, r) => sum + Number(r.valor), 0);
 
       months.push({
         month: format(monthDate, 'MMM', { locale: ptBR }), // "Jan", "Fev", etc.

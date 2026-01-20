@@ -63,9 +63,9 @@ export function EvolutionLineChart({ data }: EvolutionLineChartProps) {
       acc[date] = { entradas: 0, saidas: 0 };
     }
     if (record.tipo === 'entrada') {
-      acc[date].entradas += record.valor;
+      acc[date].entradas += Number(record.valor);
     } else {
-      acc[date].saidas += record.valor;
+      acc[date].saidas += Number(record.valor);
     }
     return acc;
   }, {} as Record<string, { entradas: number; saidas: number }>);

@@ -58,9 +58,9 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
       }
 
       if (record.tipo === 'saida') {
-        monthlyData[monthKey][record.categoria].saidas += record.valor;
+        monthlyData[monthKey][record.categoria].saidas += Number(record.valor);
       } else {
-        monthlyData[monthKey][record.categoria].entradas += record.valor;
+        monthlyData[monthKey][record.categoria].entradas += Number(record.valor);
       }
     });
 

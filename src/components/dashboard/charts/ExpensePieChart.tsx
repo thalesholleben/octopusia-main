@@ -25,7 +25,7 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
   const expenses = data.filter(r => r.tipo === 'saida');
   
   const categoryTotals = expenses.reduce((acc, record) => {
-    acc[record.categoria] = (acc[record.categoria] || 0) + record.valor;
+    acc[record.categoria] = (acc[record.categoria] || 0) + Number(record.valor);
     return acc;
   }, {} as Record<string, number>);
 
