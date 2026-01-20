@@ -214,10 +214,10 @@ const Index = () => {
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-          <ExpensePieChart data={chartData.categoryData} />
-          <EvolutionLineChart data={chartData.timelineData} />
+          <ExpensePieChart data={records} />
+          <EvolutionLineChart data={records} />
           <MonthlyComparisonChart data={records} />
-          <CategoryRankingChart data={chartData.categoryData} />
+          <CategoryRankingChart data={records} />
         </div>
 
         {/* Category Evolution Chart - Full Width */}
