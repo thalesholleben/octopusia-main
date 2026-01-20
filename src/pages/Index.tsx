@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wallet,
@@ -8,7 +8,10 @@ import {
   Tag,
   BarChart3,
   Landmark,
-  AlertTriangle
+  AlertTriangle,
+  DollarSign,
+  Percent,
+  Calendar
 } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -23,6 +26,9 @@ import { useFinancialData } from '@/hooks/useFinancialData';
 import { useAuth } from '@/contexts/AuthContext';
 import { DateFilterType } from '@/types/financial';
 import { Card } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -37,6 +43,7 @@ const Index = () => {
     endDate?: Date;
   }>({ type: 'last30days' });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sazonalidadeShowEntradas, setSazonalidadeShowEntradas] = useState(true);
 
   // Buscar dados financeiros
   const { records, alerts, kpis, chartData, isLoading, error } = useFinancialData({
@@ -125,6 +132,40 @@ const Index = () => {
     ? chartData.categoryData.reduce((max, cat) => cat.value > max.value ? cat : max)
     : null;
 
+  // Calcular novos KPIs
+  const lucroLiquido = kpis.saldo;
+  const margemLiquida = kpis.entradas > 0 ? (lucroLiquido / kpis.entradas) * 100 : 0;
+
+  // Calcular sazonalidade (mês com maior entrada/saída, menor entrada/saída e média)
+  const sazonalidadeData = useMemo(() => {
+    if (records.length === 0) return null;
+
+    // Agrupar por mês
+    const monthlyTotals: Record<string, number> = {};
+
+    records.forEach(record => {
+      if (sazonalidadeShowEntradas && record.tipo !== 'entrada') return;
+      if (!sazonalidadeShowEntradas && record.tipo !== 'saida') return;
+
+      const date = new Date(record.dataComprovante);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!monthlyTotals[monthKey]) {
+        monthlyTotals[monthKey] = 0;
+      }
+      monthlyTotals[monthKey] += Number(record.valor);
+    });
+
+    const values = Object.values(monthlyTotals);
+    if (values.length === 0) return null;
+
+    const maxValue = Math.max(...values);
+    const minValue = Math.min(...values);
+    const avgValue = values.reduce((sum, val) => sum + val, 0) / values.length;
+
+    return { maxValue, minValue, avgValue };
+  }, [records, sazonalidadeShowEntradas]);
+
   return (
     <div className="min-h-screen bg-background bg-grid-pattern">
       <Header onSignOut={handleSignOut} />
@@ -203,6 +244,49 @@ const Index = () => {
               delay={350}
             />
           </div>
+
+          {/* Third row - 3 new cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <KPICard
+              title="Lucro Líquido"
+              value={formatCurrency(lucroLiquido)}
+              subtitle="Receitas - Custos"
+              icon={<DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />}
+              variant={lucroLiquido >= 0 ? 'positive' : 'negative'}
+              delay={400}
+            />
+            <KPICard
+              title="Margem Líquida"
+              value={`${margemLiquida.toFixed(1)}%`}
+              subtitle="Lucro / Receitas"
+              icon={<Percent className="w-4 h-4 sm:w-5 sm:h-5" />}
+              variant={margemLiquida >= 0 ? 'positive' : 'negative'}
+              delay={450}
+            />
+            <KPICard
+              title={sazonalidadeShowEntradas ? "Sazonalidade (Entradas)" : "Sazonalidade (Saídas)"}
+              value={sazonalidadeData ? formatCurrency(sazonalidadeData.maxValue) : '-'}
+              subtitle={
+                sazonalidadeData
+                  ? `Menor: ${formatCurrency(sazonalidadeData.minValue)} | Média: ${formatCurrency(sazonalidadeData.avgValue)}`
+                  : undefined
+              }
+              icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
+              delay={500}
+            />
+          </div>
+        </div>
+
+        {/* Sazonalidade Toggle */}
+        <div className="flex items-center justify-center gap-3 mb-6 sm:mb-8 p-3 bg-card/50 rounded-lg border border-border/50 w-fit mx-auto">
+          <Label htmlFor="sazonalidade-toggle" className="text-xs sm:text-sm font-medium cursor-pointer">
+            {sazonalidadeShowEntradas ? 'Mostrando Entradas' : 'Mostrando Saídas'}
+          </Label>
+          <Switch
+            id="sazonalidade-toggle"
+            checked={sazonalidadeShowEntradas}
+            onCheckedChange={setSazonalidadeShowEntradas}
+          />
         </div>
 
         {/* AI Alerts Section */}
