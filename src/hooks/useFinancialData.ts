@@ -176,6 +176,9 @@ export const useFinancialData = (filters: FilterOptions) => {
     const variacaoMensal =
       prevMonthSaidas > 0 ? ((saidas - prevMonthSaidas) / prevMonthSaidas) * 100 : 0;
 
+    // Valor absoluto da variação mensal em R$
+    const variacaoMensalReais = saidas - prevMonthSaidas;
+
     // Calcular lucro líquido e margem
     const lucroLiquido = entradas - saidas;
     const margemLiquida = entradas > 0 ? (lucroLiquido / entradas) * 100 : 0;
@@ -204,6 +207,7 @@ export const useFinancialData = (filters: FilterOptions) => {
       variacaoSaidas,
       ticketMedio,
       variacaoMensal,
+      variacaoMensalReais,
       totalTransacoes: filteredRecords.length,
       mediaMensal,
     };

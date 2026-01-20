@@ -191,6 +191,7 @@ const Index = () => {
               title="Saldo Total"
               value={formatCurrency(kpis.saldo)}
               subtitle={`Lucro: ${formatCurrency(kpis.lucroLiquido)}`}
+              subtitleVariant={kpis.lucroLiquido >= 0 ? 'positive' : 'negative'}
               icon={<Wallet className="w-4 h-4 sm:w-5 sm:h-5" />}
               variant={kpis.saldo >= 0 ? 'positive' : 'negative'}
               delay={100}
@@ -209,10 +210,13 @@ const Index = () => {
               delay={150}
             />
 
-            {/* 3. Variação Mensal (não mexe) */}
+            {/* 3. Variação Mensal */}
             <KPICard
               title="Variação Mensal"
-              value={`${kpis.variacaoMensal > 0 ? '+' : ''}${kpis.variacaoMensal.toFixed(1)}%`}
+              value={kpis.variacaoMensalReais >= 0
+                ? `+${formatCurrency(kpis.variacaoMensalReais)}`
+                : formatCurrency(kpis.variacaoMensalReais)
+              }
               trend={{
                 value: kpis.variacaoMensal,
                 label: 'vs mês anterior'
@@ -243,7 +247,7 @@ const Index = () => {
                 label: 'vs mês anterior'
               }}
               icon={<TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
-              variant="negative"
+              variant={kpis.variacaoSaidas <= 0 ? 'positive' : 'negative'}
               delay={300}
             />
 

@@ -260,12 +260,12 @@ export default function Settings() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Desativado</SelectItem>
-                    <SelectItem value="simple">Simples</SelectItem>
+                    <SelectItem value="simple">Simples (mensal)</SelectItem>
                     <SelectItem
                       value="advanced"
                       disabled={subscription !== 'pro'}
                     >
-                      Avançado {subscription !== 'pro' && '(Apenas Pro)'}
+                      Avançado (quinzenal) {subscription !== 'pro' && '- Apenas Pro'}
                     </SelectItem>
                   </SelectContent>
                 </Select>
