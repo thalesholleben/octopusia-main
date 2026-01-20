@@ -59,6 +59,37 @@ const Index = () => {
     }
   }, [user, authLoading, navigate]);
 
+  // Calcular sazonalidade (mês com maior entrada/saída, menor entrada/saída e média)
+  // IMPORTANTE: useMemo deve ser chamado ANTES de qualquer return condicional
+  const sazonalidadeData = useMemo(() => {
+    if (records.length === 0) return null;
+
+    // Agrupar por mês
+    const monthlyTotals: Record<string, number> = {};
+
+    records.forEach(record => {
+      if (sazonalidadeShowEntradas && record.tipo !== 'entrada') return;
+      if (!sazonalidadeShowEntradas && record.tipo !== 'saida') return;
+
+      const date = new Date(record.dataComprovante);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!monthlyTotals[monthKey]) {
+        monthlyTotals[monthKey] = 0;
+      }
+      monthlyTotals[monthKey] += Number(record.valor);
+    });
+
+    const values = Object.values(monthlyTotals);
+    if (values.length === 0) return null;
+
+    const maxValue = Math.max(...values);
+    const minValue = Math.min(...values);
+    const avgValue = values.reduce((sum, val) => sum + val, 0) / values.length;
+
+    return { maxValue, minValue, avgValue };
+  }, [records, sazonalidadeShowEntradas]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -135,36 +166,6 @@ const Index = () => {
   // Calcular novos KPIs
   const lucroLiquido = kpis.saldo;
   const margemLiquida = kpis.entradas > 0 ? (lucroLiquido / kpis.entradas) * 100 : 0;
-
-  // Calcular sazonalidade (mês com maior entrada/saída, menor entrada/saída e média)
-  const sazonalidadeData = useMemo(() => {
-    if (records.length === 0) return null;
-
-    // Agrupar por mês
-    const monthlyTotals: Record<string, number> = {};
-
-    records.forEach(record => {
-      if (sazonalidadeShowEntradas && record.tipo !== 'entrada') return;
-      if (!sazonalidadeShowEntradas && record.tipo !== 'saida') return;
-
-      const date = new Date(record.dataComprovante);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-      if (!monthlyTotals[monthKey]) {
-        monthlyTotals[monthKey] = 0;
-      }
-      monthlyTotals[monthKey] += Number(record.valor);
-    });
-
-    const values = Object.values(monthlyTotals);
-    if (values.length === 0) return null;
-
-    const maxValue = Math.max(...values);
-    const minValue = Math.min(...values);
-    const avgValue = values.reduce((sum, val) => sum + val, 0) / values.length;
-
-    return { maxValue, minValue, avgValue };
-  }, [records, sazonalidadeShowEntradas]);
 
   return (
     <div className="min-h-screen bg-background bg-grid-pattern">
