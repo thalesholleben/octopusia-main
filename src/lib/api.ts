@@ -184,3 +184,96 @@ export const userAPI = {
     notifyDashboard: boolean;
   }>('/user/notification-preferences', preferences),
 };
+
+// Goals API Types
+export interface FinancialGoal {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  type: 'economia' | 'limite_gasto' | 'meta_receita' | 'investimento';
+  targetValue: number;
+  currentValue: number;
+  category?: string;
+  period?: 'mensal' | 'trimestral' | 'anual' | 'personalizado';
+  startDate: string;
+  endDate: string;
+  status: 'ativo' | 'pausado' | 'concluido' | 'falhou';
+  autoComplete: boolean;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  progress: number;
+  atRisk: boolean;
+}
+
+export interface GoalStats {
+  active: number;
+  completed: number;
+  failed: number;
+  atRisk: number;
+  total: number;
+  successRate: number;
+}
+
+export interface GamificationData {
+  level: number;
+  levelName: string;
+  experience: number;
+  xpForNextLevel: number;
+  xpProgress: number;
+  totalGoalsCompleted: number;
+  currentStreak: number;
+  longestStreak: number;
+  badges: Array<{
+    id: string;
+    code: string;
+    name: string;
+    description: string;
+    icon: string;
+    category: string;
+    unlockedAt: string;
+  }>;
+}
+
+export const goalsAPI = {
+  getGoals: (params?: { status?: string; period?: string }) =>
+    api.get<{ goals: FinancialGoal[] }>('/goals', { params }),
+
+  getStats: () => api.get<GoalStats>('/goals/stats'),
+
+  getGoal: (id: string) => api.get<FinancialGoal>(`/goals/${id}`),
+
+  createGoal: (data: {
+    title: string;
+    description?: string;
+    type: string;
+    targetValue: number;
+    category?: string;
+    period?: string;
+    startDate: string;
+    endDate: string;
+    autoComplete?: boolean;
+  }) => api.post<{ message: string; goal: FinancialGoal }>('/goals', data),
+
+  updateGoal: (id: string, data: Partial<{
+    title: string;
+    description: string | null;
+    targetValue: number;
+    category: string | null;
+    period: string | null;
+    startDate: string;
+    endDate: string;
+    status: string;
+    autoComplete: boolean;
+  }>) => api.put<{ message: string; goal: FinancialGoal }>(`/goals/${id}`, data),
+
+  deleteGoal: (id: string) => api.delete<{ message: string }>(`/goals/${id}`),
+
+  syncProgress: (id: string) =>
+    api.post<{ message: string; goal: FinancialGoal }>(`/goals/${id}/sync`),
+
+  getAlerts: () => api.get<{ alerts: AIAlert[] }>('/goals/alerts'),
+
+  getGamification: () => api.get<GamificationData>('/goals/user/gamification'),
+};
