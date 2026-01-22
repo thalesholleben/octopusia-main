@@ -20,7 +20,6 @@ import {
   getGroupKey,
   formatAxisLabel,
   shouldShowDots,
-  getCurveType,
   getXAxisInterval,
   getGranularityShortLabel,
 } from '@/lib/chartGranularity';
@@ -36,7 +35,6 @@ const COLORS = [
 ];
 
 export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
-  const [showType, setShowType] = useState<'saidas' | 'ambos'>('saidas');
   const [granularityOverride, setGranularityOverride] = useState<GranularityType | 'auto'>('auto');
   const [showGranularityOptions, setShowGranularityOptions] = useState(false);
 
@@ -53,11 +51,31 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
     };
   }, [data, granularityOverride]);
 
-  // Agrupa dados por granularidade dinâmica
-  const chartData = useMemo(() => {
-    const groupedData: Record<string, Record<string, { saidas: number; entradas: number }>> = {};
+  // Top 8 categorias por valor total (calcula primeiro para usar no chartData)
+  const topCategories = useMemo(() => {
+    const categoryTotals: Record<string, number> = {};
 
-    data.forEach(record => {
+    // Filtra apenas saídas e calcula totais
+    data.filter(record => record.tipo === 'saida').forEach(record => {
+      const valor = Number(record.valor);
+      categoryTotals[record.categoria] = (categoryTotals[record.categoria] || 0) + valor;
+    });
+
+    return Object.entries(categoryTotals)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 8)
+      .map(([cat]) => cat);
+  }, [data]);
+
+  // Agrupa dados por granularidade dinâmica (apenas saídas)
+  const chartData = useMemo(() => {
+    // Filtra apenas saídas
+    const saidasData = data.filter(record => record.tipo === 'saida');
+
+    // Agrupa por período
+    const groupedData: Record<string, Record<string, number>> = {};
+
+    saidasData.forEach(record => {
       const date = safeParseDateStr(record.dataComprovante);
       if (!date) return;
 
@@ -68,59 +86,34 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
       }
 
       if (!groupedData[groupKey][record.categoria]) {
-        groupedData[groupKey][record.categoria] = { saidas: 0, entradas: 0 };
+        groupedData[groupKey][record.categoria] = 0;
       }
 
-      if (record.tipo === 'saida') {
-        groupedData[groupKey][record.categoria].saidas += Number(record.valor);
-      } else {
-        groupedData[groupKey][record.categoria].entradas += Number(record.valor);
-      }
+      groupedData[groupKey][record.categoria] += Number(record.valor);
     });
+
+    // Obtém todos os períodos ordenados
+    const allPeriods = Object.keys(groupedData).sort();
 
     // Converte para array no formato do Recharts
-    return Object.entries(groupedData)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([groupKey, categories]) => {
-        const result: Record<string, unknown> = {
-          groupKey,
-          groupFormatted: formatAxisLabel(groupKey, activeGranularity),
-        };
+    return allPeriods.map((groupKey) => {
+      const result: Record<string, unknown> = {
+        groupKey,
+        groupFormatted: formatAxisLabel(groupKey, activeGranularity),
+      };
 
-        Object.entries(categories).forEach(([categoria, values]) => {
-          if (showType === 'saidas') {
-            result[categoria] = values.saidas;
-          } else {
-            result[categoria] = values.entradas + values.saidas;
-          }
-        });
-
-        return result;
+      // Para cada top categoria, adiciona o valor (ou 0 se não existir neste período)
+      topCategories.forEach((categoria) => {
+        result[categoria] = groupedData[groupKey][categoria] || 0;
       });
-  }, [data, showType, activeGranularity]);
 
-  // Top 8 categorias por valor total
-  const topCategories = useMemo(() => {
-    const categoryTotals: Record<string, number> = {};
-
-    chartData.forEach(period => {
-      Object.entries(period).forEach(([key, value]) => {
-        if (key !== 'groupKey' && key !== 'groupFormatted' && typeof value === 'number') {
-          categoryTotals[key] = (categoryTotals[key] || 0) + value;
-        }
-      });
+      return result;
     });
-
-    return Object.entries(categoryTotals)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 8)
-      .map(([cat]) => cat);
-  }, [chartData]);
+  }, [data, activeGranularity, topCategories]);
 
   // Configurações visuais baseadas na densidade de dados
   const dataPointCount = chartData.length;
   const showDots = shouldShowDots(dataPointCount);
-  const curveType = getCurveType(dataPointCount);
   const xAxisInterval = getXAxisInterval(dataPointCount);
 
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) => {
@@ -168,41 +161,23 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Seletor de granularidade (expansível) */}
-          {showGranularityOptions && (
-            <RadioGroup
-              value={granularityOverride}
-              onValueChange={(v) => setGranularityOverride(v as GranularityType | 'auto')}
-              className="flex gap-3"
-            >
-              {(['auto', 'daily', 'weekly', 'monthly'] as const).map((option) => (
-                <div key={option} className="flex items-center space-x-1.5">
-                  <RadioGroupItem value={option} id={`gran-${option}`} />
-                  <Label htmlFor={`gran-${option}`} className="text-xs text-muted-foreground cursor-pointer font-normal">
-                    {option === 'auto' ? 'Auto' : option === 'daily' ? 'Dia' : option === 'weekly' ? 'Sem' : 'Mês'}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          )}
-
-          {/* Toggle saídas/ambos existente */}
-          <RadioGroup value={showType} onValueChange={(v) => setShowType(v as 'saidas' | 'ambos')} className="flex gap-4">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="saidas" id="saidas" />
-              <Label htmlFor="saidas" className="text-xs text-muted-foreground cursor-pointer font-normal">
-                Apenas Saídas
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="ambos" id="ambos" />
-              <Label htmlFor="ambos" className="text-xs text-muted-foreground cursor-pointer font-normal">
-                Entradas + Saídas
-              </Label>
-            </div>
+        {/* Seletor de granularidade (expansível) */}
+        {showGranularityOptions && (
+          <RadioGroup
+            value={granularityOverride}
+            onValueChange={(v) => setGranularityOverride(v as GranularityType | 'auto')}
+            className="flex gap-3"
+          >
+            {(['auto', 'daily', 'weekly', 'monthly'] as const).map((option) => (
+              <div key={option} className="flex items-center space-x-1.5">
+                <RadioGroupItem value={option} id={`gran-${option}`} />
+                <Label htmlFor={`gran-${option}`} className="text-xs text-muted-foreground cursor-pointer font-normal">
+                  {option === 'auto' ? 'Auto' : option === 'daily' ? 'Dia' : option === 'weekly' ? 'Sem' : 'Mês'}
+                </Label>
+              </div>
+            ))}
           </RadioGroup>
-        </div>
+        )}
       </div>
 
       {!hasData ? (
@@ -246,7 +221,7 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
               {topCategories.map((cat, index) => (
                 <Area
                   key={cat}
-                  type={curveType}
+                  type="linear"
                   dataKey={cat}
                   name={cat}
                   stroke={COLORS[index % COLORS.length]}

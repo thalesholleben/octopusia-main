@@ -98,8 +98,53 @@ All charts follow this pattern:
 - **ExpensePieChart**: Distribution by category
 - **EvolutionLineChart**: Timeline of balance over time
 - **MonthlyComparisonChart**: Last 6 months total income vs expenses (NO filters, NO categories)
-- **CategoryEvolutionChart**: Top 8 categories over time with toggle (saidas only vs saidas+entradas)
+- **CategoryEvolutionChart**: Top 8 categories over time with dynamic granularity (see below)
 - **CategoryRankingChart**: Top 5 categories sorted by value
+
+### CategoryEvolutionChart (Dynamic Granularity)
+
+The **CategoryEvolutionChart** uses smart auto-granularity that adapts to the data's date range for better visualization.
+
+**Data Handling**:
+- **Saídas Only**: Shows only expenses (no income toggle)
+- **Gap Filling**: Missing periods are filled with 0 for each top 8 category
+- **Linear Lines**: Uses straight lines (not curves) for clarity when categories drop to 0
+
+**Auto-Granularity Rules** (based on `daysDiff` between min/max dates):
+| Date Range | Granularity | X-Axis Format | Example |
+|------------|-------------|---------------|---------|
+| 1-7 days | Daily | "dd MMM" | "15 jan" |
+| 8-60 days | Weekly | "'Sem' dd/MM" | "Sem 08/01" |
+| 61-365 days | Monthly | "MMM/yy" | "jan/24" |
+| 365+ days | Quarterly | "QT yyyy" | "1T 2024" |
+
+**Manual Override**: Clickable badge `[D/S/M/T]` next to title expands granularity selector:
+- Auto (default - smart selection)
+- Dia / Sem / Mês
+
+**Adaptive Visual Settings** (based on `dataPointCount`):
+- **Dots**: Show when `< 15` data points
+- **Line Type**: Always `linear` (straight lines)
+- **X-Axis Interval**: Dynamic to prevent label overlap
+
+**Key Implementation Details**:
+- Top 8 categories calculated FIRST, then used to populate all periods
+- Each period gets ALL top 8 categories with value or 0
+- Prevents disconnected lines when category has no expenses in a period
+
+**Key Files**:
+- `src/components/dashboard/charts/CategoryEvolutionChart.tsx` - Main component
+- `src/lib/chartGranularity.ts` - Utility functions (grouping, formatting, visual settings)
+- `src/types/chartGranularity.ts` - Type definitions (`GranularityType`, `GranularityConfig`)
+
+**Utility Functions** (`chartGranularity.ts`):
+- `getDateRangeFromRecords(records)` → `{ minDate, maxDate, daysDiff }`
+- `determineGranularity(daysDiff)` → `GranularityType`
+- `getGroupKey(date, granularity)` → grouping key string
+- `formatAxisLabel(groupKey, granularity)` → X-axis label
+- `shouldShowDots(count)` / `getXAxisInterval(count)`
+
+**Important**: This chart RESPECTS dashboard date filters (unlike MonthlyComparisonChart)
 
 ### Financial Health Card
 The **Financial Health Card** displays a comprehensive health score (0-100) with supporting metrics, positioned below AI Alerts on the dashboard.
@@ -187,10 +232,12 @@ The **Financial Health Card** displays a comprehensive health score (0-100) with
 
 ### Frontend
 - **`src/lib/api.ts`**: Centralized API client with typed endpoints (authAPI, financeAPI, userAPI)
+- **`src/lib/chartGranularity.ts`**: Chart granularity utilities (date grouping, formatting, visual settings)
 - **`src/hooks/useFinancialData.ts`**: Main data fetching hook - handles all dashboard data logic
 - **`src/contexts/AuthContext.tsx`**: JWT authentication state and protected route logic
 - **`src/pages/Index.tsx`**: Dashboard page - main entry point with all charts and KPIs
 - **`src/types/financial.ts`**: TypeScript definitions for FinanceRecord, AIAlert, DateFilter types
+- **`src/types/chartGranularity.ts`**: Granularity types (GranularityType, GranularityConfig, GRANULARITY_OPTIONS)
 
 ### Backend
 - **`server/src/index.ts`**: Express app setup with CORS, helmet, passport, routes
