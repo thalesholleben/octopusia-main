@@ -32,11 +32,17 @@ export const configurePassport = () => {
   );
 
   // JWT Strategy (Protect routes)
+  // CRITICAL: JWT_SECRET must be set in environment variables
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+
   passport.use(
     new JwtStrategy(
       {
         jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-        secretOrKey: process.env.JWT_SECRET || 'default_secret',
+        secretOrKey: jwtSecret,
       },
       async (payload, done) => {
         try {

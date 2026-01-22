@@ -1,3 +1,6 @@
+# IMPORTANTE: Configurar variáveis de ambiente no EasyPanel ou em arquivo .env local
+# Nunca commitar credenciais reais neste arquivo!
+
 networks:
   easypanel:
     external: true
@@ -14,13 +17,13 @@ services:
       - easypanel
       - easypanel-n8n
     environment:
-      NODE_ENV: production
-      PORT: 3001
-      DATABASE_URL: postgres://n8nuser:Vk2%40esEaYS@n8n_postgres:5432/octopusia?sslmode=disable
-      JWT_SECRET: TEwh2LEpU4mbIJ3MiMykRY0cspX2d87zqkXnegYENKM
-      JWT_EXPIRES_IN: 7d
-      FRONTEND_URL: https://hub.thalesgomes.com
-      REGISTRATION_KEY: octopus_reg_key_2026_secure_v1
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3001}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      FRONTEND_URL: ${FRONTEND_URL}
+      REGISTRATION_KEY: ${REGISTRATION_KEY}
       PASSWORD_RECOVERY_WEBHOOK_URL: ${PASSWORD_RECOVERY_WEBHOOK_URL:-}
     expose:
       - "3001"
@@ -36,7 +39,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: https://hub.thalesgomes.com/api
+        VITE_API_URL: ${VITE_API_URL}
     networks:
       - easypanel
       - easypanel-n8n

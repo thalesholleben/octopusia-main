@@ -16,7 +16,8 @@
       "Bash(npm run prisma:generate:*)",
       "Bash(ping:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

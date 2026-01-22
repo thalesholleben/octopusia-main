@@ -64,8 +64,6 @@ const DEFAULT_INCOME_CATEGORIES = ['Serviço', 'Produto', 'Outros'];
 export const getFinanceRecords = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    console.log('[getFinanceRecords] userId:', userId);  // DEBUG LOG
-    console.log('[getFinanceRecords] query params:', req.query);  // DEBUG LOG
 
     // Validar filtros e paginação
     const { startDate, endDate, tipo, categoria } = filterSchema.parse(req.query);
@@ -116,8 +114,6 @@ export const getFinanceRecords = async (req: Request, res: Response) => {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    console.log('[getFinanceRecords] found records:', records.length, 'total:', totalRecords);  // DEBUG LOG
-
     res.json({
       records,
       pagination: {
@@ -141,14 +137,12 @@ export const getFinanceRecords = async (req: Request, res: Response) => {
 export const getAIAlerts = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    console.log('[getAIAlerts] userId:', userId);  // DEBUG LOG
 
     const alerts = await prisma.aiAlert.findMany({
       where: { userId },
       orderBy: { updatedAt: 'desc' },
       take: 10, // Últimos 10 alertas
     });
-    console.log('[getAIAlerts] found alerts:', alerts.length);  // DEBUG LOG
 
     res.json({ alerts });
   } catch (error) {
