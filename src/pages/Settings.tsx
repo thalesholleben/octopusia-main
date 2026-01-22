@@ -186,11 +186,11 @@ export default function Settings() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background bg-grid-pattern">
         <Header onSignOut={signOut} />
-        <main className="container px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-          <div className="flex items-center justify-center h-[60vh]">
-            <p className="text-muted-foreground">Carregando...</p>
+        <main className="container px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         </main>
       </div>
@@ -198,22 +198,29 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background bg-grid-pattern">
       <Header onSignOut={signOut} />
 
-      <main className="container px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-        {/* Header */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="gap-2 mb-4 mt-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar ao Dashboard
-          </Button>
-          <h1 className="text-3xl font-bold gradient-text">Configurações</h1>
-          <p className="text-muted-foreground mt-2">Gerencie suas preferências e assinatura</p>
+      <main className="container px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="gap-2 mb-4 mt-1"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar ao Dashboard
+        </Button>
+
+        {/* Title Section */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-6 h-6 text-primary" />
+            Configurações
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Gerencie suas preferências e assinatura
+          </p>
         </div>
 
         <div className="grid gap-6 max-w-3xl">

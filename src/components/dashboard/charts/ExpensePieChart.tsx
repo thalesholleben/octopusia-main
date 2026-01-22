@@ -95,7 +95,7 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="w-full sm:w-1/2 h-auto sm:h-full overflow-y-auto pt-2 sm:pt-0 sm:pl-2">
+          <div className="w-full sm:w-1/2 h-auto sm:h-full overflow-y-auto custom-scrollbar pt-2 sm:pt-0 sm:pl-2">
             <div className="grid grid-cols-2 gap-x-2 gap-y-1">
               {chartData.map((item, index) => (
                 <div key={item.name} className="flex items-center gap-1.5">

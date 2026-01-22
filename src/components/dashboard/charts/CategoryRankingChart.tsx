@@ -44,7 +44,7 @@ export function CategoryRankingChart({ data }: CategoryRankingChartProps) {
           <p className="text-sm">Nenhum gasto no período</p>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 pr-1 sm:pr-2">
+        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 sm:space-y-4 pr-1 sm:pr-2">
           {sortedCategories.map(([category, value], index) => {
             const percentage = ((value / totalExpenses) * 100).toFixed(1);
             const barWidth = (value / maxValue) * 100;

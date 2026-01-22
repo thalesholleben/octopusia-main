@@ -49,9 +49,8 @@ export const EXPENSE_CATEGORIES = [
 
 // Categorias de entrada
 export const INCOME_CATEGORIES = [
-  'Site',
-  'Automação',
-  'Design',
+  'Serviço',
+  'Produto',
   'Outros'
 ] as const;
 

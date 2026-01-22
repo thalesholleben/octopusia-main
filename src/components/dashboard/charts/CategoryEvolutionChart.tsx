@@ -109,7 +109,7 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-lg max-h-64 overflow-y-auto">
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg max-h-64 overflow-y-auto custom-scrollbar">
           <p className="text-sm font-medium text-foreground mb-2">{label}</p>
           <div className="space-y-1">
             {payload

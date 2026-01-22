@@ -151,7 +151,7 @@ export function CategoryManager({
           )}
 
           {/* Categories list */}
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
             {customCategories.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 Nenhuma categoria personalizada criada

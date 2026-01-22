@@ -50,7 +50,7 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   'Saúde', 'Filhos', 'Trabalho', 'Ferramentas', 'Lazer e Vida Social',
   'Dívidas', 'Reserva', 'Objetivos', 'Educação', 'Imprevistos', 'Outros'
 ];
-const DEFAULT_INCOME_CATEGORIES = ['Site', 'Automação', 'Design', 'Outros'];
+const DEFAULT_INCOME_CATEGORIES = ['Serviço', 'Produto', 'Outros'];
 
 export const getFinanceRecords = async (req: Request, res: Response) => {
   try {
