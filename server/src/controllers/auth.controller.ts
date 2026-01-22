@@ -38,7 +38,18 @@ export const register = async (req: Request, res: Response) => {
         password: hashedPassword,
         displayName,
       },
-      select: { id: true, email: true, displayName: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        subscription: true,
+        report: true,
+        lastReport: true,
+        notifyEmail: true,
+        notifyChat: true,
+        notifyDashboard: true,
+        createdAt: true,
+      },
     });
 
     // Gerar token
@@ -84,6 +95,12 @@ export const login = (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         displayName: user.displayName,
+        subscription: user.subscription,
+        report: user.report,
+        lastReport: user.lastReport,
+        notifyEmail: user.notifyEmail,
+        notifyChat: user.notifyChat,
+        notifyDashboard: user.notifyDashboard,
       },
       token,
     });

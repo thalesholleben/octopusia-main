@@ -42,7 +42,17 @@ export const configurePassport = () => {
         try {
           const user = await prisma.user.findUnique({
             where: { id: payload.userId },
-            select: { id: true, email: true, displayName: true }
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+              subscription: true,
+              report: true,
+              lastReport: true,
+              notifyEmail: true,
+              notifyChat: true,
+              notifyDashboard: true,
+            }
           });
 
           if (!user) {
