@@ -24,6 +24,34 @@ const createRecordSchema = z.object({
   }),
 });
 
+// Schema de validação para atualização de registro
+const updateRecordSchema = z.object({
+  valor: z.number().positive('Valor deve ser positivo').optional(),
+  de: z.string().optional().nullable(),
+  para: z.string().optional().nullable(),
+  tipo: z.enum(['entrada', 'saida']).optional(),
+  categoria: z.string().min(1, 'Categoria é obrigatória').optional(),
+  dataComprovante: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: 'Data inválida'
+  }).optional(),
+});
+
+// Schema para categoria customizada
+const customCategorySchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(50, 'Nome muito longo'),
+  tipo: z.enum(['entrada', 'saida'], {
+    errorMap: () => ({ message: 'Tipo deve ser "entrada" ou "saida"' })
+  }),
+});
+
+// Categorias padrão
+const DEFAULT_EXPENSE_CATEGORIES = [
+  'Aluguel', 'Contas Fixas', 'Alimentação', 'FastFood', 'Transporte',
+  'Saúde', 'Filhos', 'Trabalho', 'Ferramentas', 'Lazer e Vida Social',
+  'Dívidas', 'Reserva', 'Objetivos', 'Educação', 'Imprevistos', 'Outros'
+];
+const DEFAULT_INCOME_CATEGORIES = ['Site', 'Automação', 'Design', 'Outros'];
+
 export const getFinanceRecords = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -178,5 +206,224 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
     }
     console.error('Create finance record error:', error);
     res.status(500).json({ error: 'Erro ao criar registro financeiro' });
+  }
+};
+
+// Atualizar registro financeiro
+export const updateFinanceRecord = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const data = updateRecordSchema.parse(req.body);
+
+    // Verificar se o registro pertence ao usuário
+    const existing = await prisma.financeRecord.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Registro não encontrado' });
+    }
+
+    const record = await prisma.financeRecord.update({
+      where: { id },
+      data: {
+        ...(data.valor !== undefined && { valor: data.valor }),
+        ...(data.de !== undefined && { de: data.de }),
+        ...(data.para !== undefined && { para: data.para }),
+        ...(data.tipo !== undefined && { tipo: data.tipo }),
+        ...(data.categoria !== undefined && { categoria: data.categoria }),
+        ...(data.dataComprovante !== undefined && {
+          dataComprovante: new Date(data.dataComprovante)
+        }),
+      },
+    });
+
+    res.json({ message: 'Registro atualizado com sucesso', record });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    console.error('Update finance record error:', error);
+    res.status(500).json({ error: 'Erro ao atualizar registro' });
+  }
+};
+
+// Excluir registro financeiro
+export const deleteFinanceRecord = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    // Verificar se o registro pertence ao usuário
+    const existing = await prisma.financeRecord.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Registro não encontrado' });
+    }
+
+    await prisma.financeRecord.delete({ where: { id } });
+
+    res.json({ message: 'Registro excluído com sucesso' });
+  } catch (error) {
+    console.error('Delete finance record error:', error);
+    res.status(500).json({ error: 'Erro ao excluir registro' });
+  }
+};
+
+// Buscar todas as categorias (padrão + customizadas)
+export const getCategories = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    // Buscar categorias customizadas do usuário
+    const customCategories = await prisma.userCustomCategory.findMany({
+      where: { userId },
+      orderBy: { name: 'asc' },
+    });
+
+    res.json({
+      defaultCategories: {
+        entrada: DEFAULT_INCOME_CATEGORIES,
+        saida: DEFAULT_EXPENSE_CATEGORIES,
+      },
+      customCategories: customCategories.map(c => ({
+        id: c.id,
+        name: c.name,
+        tipo: c.tipo,
+        isCustom: true,
+      })),
+    });
+  } catch (error) {
+    console.error('Get categories error:', error);
+    res.status(500).json({ error: 'Erro ao buscar categorias' });
+  }
+};
+
+// Criar categoria customizada (PRO only)
+export const createCustomCategory = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    // Verificar se é PRO
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user?.subscription !== 'pro') {
+      return res.status(403).json({
+        error: 'Categorias personalizadas são exclusivas do plano PRO'
+      });
+    }
+
+    // Verificar limite de 10 categorias
+    const count = await prisma.userCustomCategory.count({ where: { userId } });
+    if (count >= 10) {
+      return res.status(400).json({
+        error: 'Limite de 10 categorias personalizadas atingido'
+      });
+    }
+
+    const data = customCategorySchema.parse(req.body);
+
+    const category = await prisma.userCustomCategory.create({
+      data: {
+        userId,
+        name: data.name,
+        tipo: data.tipo,
+      },
+    });
+
+    res.status(201).json({
+      message: 'Categoria criada com sucesso',
+      category: { id: category.id, name: category.name, tipo: category.tipo, isCustom: true }
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    // Handle unique constraint violation
+    if ((error as any).code === 'P2002') {
+      return res.status(400).json({ error: 'Categoria com este nome já existe' });
+    }
+    console.error('Create custom category error:', error);
+    res.status(500).json({ error: 'Erro ao criar categoria' });
+  }
+};
+
+// Atualizar categoria customizada (PRO only)
+export const updateCustomCategory = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    // Verificar se é PRO
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user?.subscription !== 'pro') {
+      return res.status(403).json({
+        error: 'Categorias personalizadas são exclusivas do plano PRO'
+      });
+    }
+
+    // Verificar se a categoria pertence ao usuário
+    const existing = await prisma.userCustomCategory.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Categoria não encontrada' });
+    }
+
+    const data = customCategorySchema.parse(req.body);
+
+    const category = await prisma.userCustomCategory.update({
+      where: { id },
+      data: { name: data.name, tipo: data.tipo },
+    });
+
+    res.json({
+      message: 'Categoria atualizada com sucesso',
+      category: { id: category.id, name: category.name, tipo: category.tipo, isCustom: true }
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    if ((error as any).code === 'P2002') {
+      return res.status(400).json({ error: 'Categoria com este nome já existe' });
+    }
+    console.error('Update custom category error:', error);
+    res.status(500).json({ error: 'Erro ao atualizar categoria' });
+  }
+};
+
+// Excluir categoria customizada (PRO only)
+export const deleteCustomCategory = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    // Verificar se é PRO
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user?.subscription !== 'pro') {
+      return res.status(403).json({
+        error: 'Categorias personalizadas são exclusivas do plano PRO'
+      });
+    }
+
+    // Verificar se a categoria pertence ao usuário
+    const existing = await prisma.userCustomCategory.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Categoria não encontrada' });
+    }
+
+    await prisma.userCustomCategory.delete({ where: { id } });
+
+    res.json({ message: 'Categoria excluída com sucesso' });
+  } catch (error) {
+    console.error('Delete custom category error:', error);
+    res.status(500).json({ error: 'Erro ao excluir categoria' });
   }
 };

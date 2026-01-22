@@ -57,3 +57,19 @@ export const INCOME_CATEGORIES = [
 
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
 export type IncomeCategory = typeof INCOME_CATEGORIES[number];
+
+// Tipos para categorias customizadas
+export interface CustomCategory {
+  id: string;
+  name: string;
+  tipo: 'entrada' | 'saida';
+  isCustom: boolean;
+}
+
+export interface CategoriesResponse {
+  defaultCategories: {
+    entrada: string[];
+    saida: string[];
+  };
+  customCategories: CustomCategory[];
+}

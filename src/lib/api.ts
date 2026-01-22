@@ -130,6 +130,22 @@ export const authAPI = {
     api.post<{ message: string }>('/auth/forgot-password', { email }),
 };
 
+// Tipos de categorias
+export interface CustomCategory {
+  id: string;
+  name: string;
+  tipo: 'entrada' | 'saida';
+  isCustom: boolean;
+}
+
+export interface CategoriesResponse {
+  defaultCategories: {
+    entrada: string[];
+    saida: string[];
+  };
+  customCategories: CustomCategory[];
+}
+
 export const financeAPI = {
   getRecords: (params?: {
     startDate?: string;
@@ -138,12 +154,45 @@ export const financeAPI = {
     categoria?: string;
   }) => api.get<{ records: FinanceRecord[] }>('/finance/records', { params }),
 
+  createRecord: (data: {
+    valor: number;
+    de?: string;
+    para?: string;
+    tipo: 'entrada' | 'saida';
+    categoria: string;
+    dataComprovante: string;
+  }) => api.post<{ message: string; record: FinanceRecord }>('/finance/records', data),
+
+  updateRecord: (id: string, data: {
+    valor?: number;
+    de?: string | null;
+    para?: string | null;
+    tipo?: 'entrada' | 'saida';
+    categoria?: string;
+    dataComprovante?: string;
+  }) => api.put<{ message: string; record: FinanceRecord }>(`/finance/records/${id}`, data),
+
+  deleteRecord: (id: string) =>
+    api.delete<{ message: string }>(`/finance/records/${id}`),
+
   getAlerts: () => api.get<{ alerts: AIAlert[] }>('/finance/alerts'),
 
   getStatistics: (params?: { startDate?: string; endDate?: string }) =>
     api.get<Statistics>('/finance/statistics', { params }),
 
   getClients: () => api.get<{ clients: string[] }>('/finance/clients'),
+
+  // Categories
+  getCategories: () => api.get<CategoriesResponse>('/finance/categories'),
+
+  createCustomCategory: (data: { name: string; tipo: 'entrada' | 'saida' }) =>
+    api.post<{ message: string; category: CustomCategory }>('/finance/categories', data),
+
+  updateCustomCategory: (id: string, data: { name: string; tipo: 'entrada' | 'saida' }) =>
+    api.put<{ message: string; category: CustomCategory }>(`/finance/categories/${id}`, data),
+
+  deleteCustomCategory: (id: string) =>
+    api.delete<{ message: string }>(`/finance/categories/${id}`),
 };
 
 export const userAPI = {
