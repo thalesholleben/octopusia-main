@@ -77,7 +77,9 @@ export const getFinanceRecords = async (req: Request, res: Response) => {
 
     // Aplicar hard limit de 12 meses
     if (startDate) {
-      const userStartDate = new Date(startDate);
+      // Parse in local timezone
+      const [year, month, day] = startDate.split('-').map(Number);
+      const userStartDate = new Date(year, month - 1, day, 0, 0, 0);
       // Usar a data mais restritiva (mais recente)
       where.dataComprovante.gte = userStartDate > twelveMonthsAgo ? userStartDate : twelveMonthsAgo;
     } else {
@@ -86,7 +88,8 @@ export const getFinanceRecords = async (req: Request, res: Response) => {
 
     // Filtro de data final (se fornecido)
     if (endDate) {
-      where.dataComprovante.lte = new Date(endDate);
+      const [year, month, day] = endDate.split('-').map(Number);
+      where.dataComprovante.lte = new Date(year, month - 1, day, 23, 59, 59);
     }
 
     // Filtro de tipo
@@ -161,8 +164,14 @@ export const getStatistics = async (req: Request, res: Response) => {
 
     if (startDate || endDate) {
       where.dataComprovante = {};
-      if (startDate) where.dataComprovante.gte = new Date(startDate);
-      if (endDate) where.dataComprovante.lte = new Date(endDate);
+      if (startDate) {
+        const [year, month, day] = startDate.split('-').map(Number);
+        where.dataComprovante.gte = new Date(year, month - 1, day, 0, 0, 0);
+      }
+      if (endDate) {
+        const [year, month, day] = endDate.split('-').map(Number);
+        where.dataComprovante.lte = new Date(year, month - 1, day, 23, 59, 59);
+      }
     }
 
     // Somas por tipo
@@ -225,6 +234,11 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const data = createRecordSchema.parse(req.body);
 
+    // Parse date in local timezone to avoid UTC conversion issues
+    // Input: "2026-01-22" -> Output: Date object at local noon
+    const [year, month, day] = data.dataComprovante.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day, 12, 0, 0);
+
     const record = await prisma.financeRecord.create({
       data: {
         userId,
@@ -234,7 +248,7 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
         tipo: data.tipo,
         categoria: data.categoria,
         classificacao: data.classificacao,
-        dataComprovante: new Date(data.dataComprovante),
+        dataComprovante: localDate,
       },
     });
 
@@ -267,6 +281,13 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Registro não encontrado' });
     }
 
+    // Parse date in local timezone if provided
+    let localDate;
+    if (data.dataComprovante !== undefined) {
+      const [year, month, day] = data.dataComprovante.split('-').map(Number);
+      localDate = new Date(year, month - 1, day, 12, 0, 0);
+    }
+
     const record = await prisma.financeRecord.update({
       where: { id },
       data: {
@@ -276,9 +297,7 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
         ...(data.tipo !== undefined && { tipo: data.tipo }),
         ...(data.categoria !== undefined && { categoria: data.categoria }),
         ...(data.classificacao !== undefined && { classificacao: data.classificacao }),
-        ...(data.dataComprovante !== undefined && {
-          dataComprovante: new Date(data.dataComprovante)
-        }),
+        ...(localDate !== undefined && { dataComprovante: localDate }),
       },
     });
 
