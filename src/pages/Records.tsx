@@ -23,12 +23,16 @@ const Records = () => {
   const [categoriaFilter, setCategoriaFilter] = useState<string | undefined>();
   const [editingRecord, setEditingRecord] = useState<FinanceRecord | null>(null);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const {
     records,
+    pagination,
     categories,
     allCategories,
     isLoading,
+    isFetching,
     error,
     mutations,
   } = useRecordsData({
@@ -36,6 +40,8 @@ const Records = () => {
     endDate,
     tipo: tipoFilter,
     categoria: categoriaFilter,
+    page: currentPage,
+    limit: pageSize,
   });
 
   // Auth redirect
@@ -52,6 +58,7 @@ const Records = () => {
 
   const handleCreateRecord = (data: Parameters<typeof mutations.createRecord>[0]) => {
     mutations.createRecord(data);
+    setCurrentPage(1); // Reset para primeira página após criar
   };
 
   const handleEditRecord = (record: FinanceRecord) => {
@@ -66,7 +73,40 @@ const Records = () => {
   const handleDeleteRecord = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este registro?')) {
       mutations.deleteRecord(id);
+      // Se deletar último registro da página E não for página 1, voltar para página anterior
+      if (records.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     }
+  };
+
+  // Handlers para filtros que resetam a página
+  const handleStartDateChange = (date: Date | undefined) => {
+    setStartDate(date);
+    setCurrentPage(1);
+  };
+
+  const handleEndDateChange = (date: Date | undefined) => {
+    setEndDate(date);
+    setCurrentPage(1);
+  };
+
+  const handleTipoChange = (tipo: 'entrada' | 'saida' | undefined) => {
+    setTipoFilter(tipo);
+    setCurrentPage(1);
+  };
+
+  const handleCategoriaChange = (categoria: string | undefined) => {
+    setCategoriaFilter(categoria);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    // Calcular posição aproximada para manter contexto
+    const firstItemIndex = (currentPage - 1) * pageSize;
+    const newPage = Math.floor(firstItemIndex / newSize) + 1;
+    setPageSize(newSize);
+    setCurrentPage(newPage);
   };
 
   const isPro = user?.subscription === 'pro';
@@ -157,10 +197,10 @@ const Records = () => {
             endDate={endDate}
             tipoFilter={tipoFilter}
             categoriaFilter={categoriaFilter}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-            onTipoChange={setTipoFilter}
-            onCategoriaChange={setCategoriaFilter}
+            onStartDateChange={handleStartDateChange}
+            onEndDateChange={handleEndDateChange}
+            onTipoChange={handleTipoChange}
+            onCategoriaChange={handleCategoriaChange}
             categories={allCategories}
           />
         </div>
@@ -169,9 +209,14 @@ const Records = () => {
         <div className="opacity-0 animate-fade-up" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
           <RecordTable
             records={records}
+            pagination={pagination}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
             onEdit={handleEditRecord}
             onDelete={handleDeleteRecord}
             isLoading={isLoading}
+            isFetching={isFetching}
           />
         </div>
       </main>

@@ -114,6 +114,20 @@ export interface Statistics {
   totalTransacoes: number;
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  totalRecords: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface PaginatedRecordsResponse {
+  records: FinanceRecord[];
+  pagination: PaginationMeta;
+}
+
 // Funções de API
 export const authAPI = {
   login: (email: string, password: string) =>
@@ -153,7 +167,9 @@ export const financeAPI = {
     endDate?: string;
     tipo?: 'entrada' | 'saida';
     categoria?: string;
-  }) => api.get<{ records: FinanceRecord[] }>('/finance/records', { params }),
+    page?: number;
+    limit?: number;
+  }) => api.get<PaginatedRecordsResponse>('/finance/records', { params }),
 
   createRecord: (data: {
     valor: number;

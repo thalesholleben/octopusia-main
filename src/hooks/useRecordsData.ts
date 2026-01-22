@@ -9,16 +9,20 @@ interface RecordFilters {
   endDate?: Date;
   tipo?: 'entrada' | 'saida';
   categoria?: string;
+  page?: number;
+  limit?: number;
 }
 
 export const useRecordsData = (filters: RecordFilters = {}) => {
   const queryClient = useQueryClient();
+  const { page = 1, limit = 50 } = filters;
 
   // Fetch records
   const {
     data: recordsData,
     isLoading: recordsLoading,
     error: recordsError,
+    isFetching,
   } = useQuery({
     queryKey: ['records', filters],
     queryFn: () => financeAPI.getRecords({
@@ -26,9 +30,12 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
       endDate: filters.endDate ? format(filters.endDate, 'yyyy-MM-dd') : undefined,
       tipo: filters.tipo,
       categoria: filters.categoria,
+      page,
+      limit,
     }),
     staleTime: 1000 * 30,
     refetchOnWindowFocus: true,
+    keepPreviousData: true,
   });
 
   // Fetch categories
@@ -118,6 +125,7 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
   });
 
   const records = recordsData?.data.records || [];
+  const pagination = recordsData?.data.pagination;
   const categories = categoriesData?.data || null;
 
   // Merged categories for selects
@@ -139,9 +147,11 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
 
   return {
     records,
+    pagination,
     categories,
     allCategories,
     isLoading: recordsLoading || categoriesLoading,
+    isFetching,
     error: recordsError || categoriesError,
     mutations: {
       createRecord: createMutation.mutate,

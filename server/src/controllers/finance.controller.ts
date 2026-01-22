@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { subMonths } from 'date-fns';
 import prisma from '../config/database';
 
 // Schema de validação para filtros
@@ -8,6 +9,12 @@ const filterSchema = z.object({
   endDate: z.string().optional(),
   tipo: z.enum(['entrada', 'saida']).optional(),
   categoria: z.string().optional(),
+});
+
+// Schema de validação para paginação
+const paginationSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(50),
 });
 
 // Schema de validação para criação de registro financeiro
@@ -60,15 +67,28 @@ export const getFinanceRecords = async (req: Request, res: Response) => {
     console.log('[getFinanceRecords] userId:', userId);  // DEBUG LOG
     console.log('[getFinanceRecords] query params:', req.query);  // DEBUG LOG
 
+    // Validar filtros e paginação
     const { startDate, endDate, tipo, categoria } = filterSchema.parse(req.query);
+    const { page, limit } = paginationSchema.parse(req.query);
 
     const where: any = { userId };
 
-    // Filtro de data
-    if (startDate || endDate) {
-      where.dataComprovante = {};
-      if (startDate) where.dataComprovante.gte = new Date(startDate);
-      if (endDate) where.dataComprovante.lte = new Date(endDate);
+    // HARD LIMIT: Sempre limitar aos últimos 12 meses
+    const twelveMonthsAgo = subMonths(new Date(), 12);
+    where.dataComprovante = {};
+
+    // Aplicar hard limit de 12 meses
+    if (startDate) {
+      const userStartDate = new Date(startDate);
+      // Usar a data mais restritiva (mais recente)
+      where.dataComprovante.gte = userStartDate > twelveMonthsAgo ? userStartDate : twelveMonthsAgo;
+    } else {
+      where.dataComprovante.gte = twelveMonthsAgo;
+    }
+
+    // Filtro de data final (se fornecido)
+    if (endDate) {
+      where.dataComprovante.lte = new Date(endDate);
     }
 
     // Filtro de tipo
@@ -77,13 +97,38 @@ export const getFinanceRecords = async (req: Request, res: Response) => {
     // Filtro de categoria
     if (categoria) where.categoria = categoria;
 
-    const records = await prisma.financeRecord.findMany({
-      where,
-      orderBy: { dataComprovante: 'desc' },
-    });
-    console.log('[getFinanceRecords] found records:', records.length);  // DEBUG LOG
+    // Calcular skip para paginação
+    const skip = (page - 1) * limit;
 
-    res.json({ records });
+    // Executar query de registros e count em paralelo
+    const [records, totalRecords] = await Promise.all([
+      prisma.financeRecord.findMany({
+        where,
+        orderBy: { dataComprovante: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.financeRecord.count({ where }),
+    ]);
+
+    // Calcular metadata de paginação
+    const totalPages = Math.ceil(totalRecords / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    console.log('[getFinanceRecords] found records:', records.length, 'total:', totalRecords);  // DEBUG LOG
+
+    res.json({
+      records,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalRecords,
+        pageSize: limit,
+        hasNextPage,
+        hasPrevPage,
+      },
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.errors[0].message });
