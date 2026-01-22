@@ -14,7 +14,9 @@
       "Bash(del favicon.ico)",
       "Bash(if exist favicon.ico del favicon.ico)",
       "Bash(npm run prisma:generate:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint:*)"
     ]
   }
 }

@@ -101,6 +101,69 @@ All charts follow this pattern:
 - **CategoryEvolutionChart**: Top 8 categories over time with toggle (saidas only vs saidas+entradas)
 - **CategoryRankingChart**: Top 5 categories sorted by value
 
+### Financial Health Card
+The **Financial Health Card** displays a comprehensive health score (0-100) with supporting metrics, positioned below AI Alerts on the dashboard.
+
+**Key Features**:
+- **Independent from Dashboard Filters**: All metrics ignore user's date range selection
+- **Progress Ring**: SVG-based circular indicator with 700ms animation
+- **Asymmetric Layout**: Desktop shows 50/50 split (Score | 3 stacked cards)
+- **Responsive**: Mobile stacks vertically, tablet shows 3 cards horizontally
+
+**Layout Structure**:
+```
+┌─────────────────────┬───────────────────────┐
+│   PROGRESS RING     │ Burn Rate      R$ X   │
+│        85           ├───────────────────────┤
+│      Saudável       │ Comprometido   X%     │
+│                     ├───────────────────────┤
+│                     │ Sobrevivência  X un.  │
+└─────────────────────┴───────────────────────┘
+```
+
+**Metrics Calculation** (`useHealthMetrics` hook):
+1. **Score de Saúde (0-100)**: Weighted average with normalization
+   - Burn Rate Score (30%): Band-based, not linear (≤30%=100, ≤50%=80, etc.)
+   - Fixed Commitment Score (40%): Percentage of income committed to fixed expenses
+   - Survival Time Score (30%): Months the user can survive with current balance
+   - Final normalization: `Math.max(0, Math.min(100, Math.round(totalScore)))`
+
+2. **Burn Rate**: Average monthly expenses from last 12 months
+   - Primary: 12-month average
+   - Secondary: 6-month average
+   - **Critical**: Always uses last 12 months, never respects dashboard filters
+   - Subtitle: "Gasto médio mensal"
+
+3. **Comprometido (Fixed Commitment)**: Fixed expenses / Total income × 100
+   - Filters only `classificacao='fixo'` expenses
+   - Uses last 12 months of data
+   - Status: Saudável (≤50%), Atenção (51-70%), Risco (>70%)
+
+4. **Tempo de Sobrevivência (Survival Time)**: Global balance / Burn Rate
+   - **Critical**: Uses ALL records for balance calculation (global, not filtered)
+   - Smart unit conversion: horas → dias → meses → anos
+   - Shows "Estável" if burn rate = 0
+   - Status: Saudável (≥6mo), Atenção (3-6mo), Risco (<3mo)
+
+5. **Badge de Tendência (optional)**: 30-day score comparison
+   - Only shows if sufficient data (≥5 records from 30 days ago)
+   - Direction: improving (+5), stable (±4), declining (-5)
+   - Uses `calculateScoreOnly()` to avoid recursion
+
+**Data Architecture**:
+- **Two Parallel Queries**:
+  - Query 1: ALL records (for global balance)
+  - Query 2: Last 12 months (for burn rate + commitment)
+- **Cache**: 5 minutes (`staleTime`)
+- **No Recursion**: `calculateTrend` uses `calculateScoreOnly` helper
+
+**Important Rules**:
+- Global balance NEVER varies with dashboard filters
+- Burn rate ALWAYS uses 12 months, regardless of user selection
+- Score uses band-based system to prevent explosion with low income
+- Trend badge silently omitted if insufficient historical data
+- Desktop fonts larger (`lg:text-2xl`) than mobile (`text-lg`)
+
 ### Subscription-Based Features
 - **PRO Plan**: Chat notifications enabled (validated frontend + backend)
 - **Basic/None Plans**: Chat notifications disabled (shows lock icon)
