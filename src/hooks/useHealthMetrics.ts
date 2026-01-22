@@ -284,6 +284,21 @@ function calculateHealthScore(
   };
 }
 
+// Função auxiliar para calcular apenas o score (sem tendência) - evita recursão
+function calculateScoreOnly(allRecords: FinanceRecord[], last12MonthsRecords: FinanceRecord[], now: Date): number {
+  const saldoGlobal = allRecords.reduce((acc, record) => {
+    const valor = Number(record.valor) || 0;
+    return record.tipo === 'entrada' ? acc + valor : acc - valor;
+  }, 0);
+
+  const burnRateData = calculateBurnRate(last12MonthsRecords, now);
+  const fixedCommitmentData = calculateFixedCommitment(last12MonthsRecords);
+  const survivalTimeData = calculateSurvivalTime(saldoGlobal, burnRateData.current);
+  const scoreData = calculateHealthScore(burnRateData, fixedCommitmentData, survivalTimeData);
+
+  return scoreData.score;
+}
+
 function calculateTrend(allRecords: FinanceRecord[], last12MonthsRecords: FinanceRecord[], now: Date) {
   // Calcular score de 30 dias atrás
   const thirtyDaysAgo = subDays(now, 30);
@@ -304,11 +319,11 @@ function calculateTrend(allRecords: FinanceRecord[], last12MonthsRecords: Financ
     return undefined;
   }
 
-  // Recalcular métricas para 30 dias atrás
-  const metricsOld = calculateHealthMetrics(recordsUntil30DaysAgo, last12MonthsUntil30DaysAgo);
-  const metricsCurrent = calculateHealthMetrics(allRecords, last12MonthsRecords);
+  // Calcular scores usando função sem recursão
+  const scoreOld = calculateScoreOnly(recordsUntil30DaysAgo, last12MonthsUntil30DaysAgo, thirtyDaysAgo);
+  const scoreCurrent = calculateScoreOnly(allRecords, last12MonthsRecords, now);
 
-  const scoreDiff = metricsCurrent.score - metricsOld.score;
+  const scoreDiff = scoreCurrent - scoreOld;
 
   // Definir direção
   const direction: 'improving' | 'stable' | 'declining' =
