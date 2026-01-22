@@ -130,7 +130,7 @@ const Goals = () => {
         <Button
           variant="ghost"
           onClick={() => navigate('/')}
-          className="gap-2 mb-4 mt-2"
+          className="gap-2 mb-4 mt-1"
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar ao Dashboard
