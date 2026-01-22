@@ -35,7 +35,7 @@ export interface HealthMetrics {
 
 export function useHealthMetrics() {
   // Query 1: TODOS os registros (para saldo global)
-  const { data: allRecords = [], isLoading: isLoadingAll } = useQuery<FinanceRecord[]>({
+  const { data: allData, isLoading: isLoadingAll } = useQuery({
     queryKey: ['finance-records-all-for-health'],
     queryFn: async () => {
       const response = await financeAPI.getRecords();
@@ -45,7 +45,7 @@ export function useHealthMetrics() {
   });
 
   // Query 2: Últimos 12 meses (para burn rate e commitment)
-  const { data: last12MonthsRecords = [], isLoading: isLoading12M } = useQuery<FinanceRecord[]>({
+  const { data: data12M, isLoading: isLoading12M } = useQuery({
     queryKey: ['finance-records-12m-for-health'],
     queryFn: async () => {
       const now = new Date();
@@ -58,6 +58,9 @@ export function useHealthMetrics() {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const allRecords = allData?.records || [];
+  const last12MonthsRecords = data12M?.records || [];
 
   const isLoading = isLoadingAll || isLoading12M;
   const hasData = allRecords.length > 0 || last12MonthsRecords.length > 0;
