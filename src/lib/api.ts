@@ -93,6 +93,7 @@ export interface FinanceRecord {
   para?: string;
   tipo: 'entrada' | 'saida';
   categoria: string;
+  classificacao?: 'fixo' | 'variavel' | 'recorrente';
   dataComprovante: string;
   createdAt: string;
 }
@@ -160,6 +161,7 @@ export const financeAPI = {
     para?: string;
     tipo: 'entrada' | 'saida';
     categoria: string;
+    classificacao?: 'fixo' | 'variavel' | 'recorrente';
     dataComprovante: string;
   }) => api.post<{ message: string; record: FinanceRecord }>('/finance/records', data),
 
@@ -169,6 +171,7 @@ export const financeAPI = {
     para?: string | null;
     tipo?: 'entrada' | 'saida';
     categoria?: string;
+    classificacao?: 'fixo' | 'variavel' | 'recorrente' | null;
     dataComprovante?: string;
   }) => api.put<{ message: string; record: FinanceRecord }>(`/finance/records/${id}`, data),
 

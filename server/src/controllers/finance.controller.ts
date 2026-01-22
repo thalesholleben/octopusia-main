@@ -19,6 +19,7 @@ const createRecordSchema = z.object({
     errorMap: () => ({ message: 'Tipo deve ser "entrada" ou "saida"' })
   }),
   categoria: z.string().min(1, 'Categoria é obrigatória'),
+  classificacao: z.enum(['fixo', 'variavel', 'recorrente']).optional(),
   dataComprovante: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: 'Data inválida'
   }),
@@ -31,6 +32,7 @@ const updateRecordSchema = z.object({
   para: z.string().optional().nullable(),
   tipo: z.enum(['entrada', 'saida']).optional(),
   categoria: z.string().min(1, 'Categoria é obrigatória').optional(),
+  classificacao: z.enum(['fixo', 'variavel', 'recorrente']).optional().nullable(),
   dataComprovante: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: 'Data inválida'
   }).optional(),
@@ -192,6 +194,7 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
         para: data.para,
         tipo: data.tipo,
         categoria: data.categoria,
+        classificacao: data.classificacao,
         dataComprovante: new Date(data.dataComprovante),
       },
     });
@@ -233,6 +236,7 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
         ...(data.para !== undefined && { para: data.para }),
         ...(data.tipo !== undefined && { tipo: data.tipo }),
         ...(data.categoria !== undefined && { categoria: data.categoria }),
+        ...(data.classificacao !== undefined && { classificacao: data.classificacao }),
         ...(data.dataComprovante !== undefined && {
           dataComprovante: new Date(data.dataComprovante)
         }),

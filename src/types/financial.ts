@@ -6,6 +6,7 @@ export interface FinanceRecord {
   para?: string;
   tipo: 'entrada' | 'saida';
   categoria: string;
+  classificacao?: 'fixo' | 'variavel' | 'recorrente';
   dataComprovante: string;
   createdAt: string;
 }
@@ -72,3 +73,7 @@ export interface CategoriesResponse {
   };
   customCategories: CustomCategory[];
 }
+
+// Classificações
+export const CLASSIFICACOES = ['fixo', 'variavel', 'recorrente'] as const;
+export type Classificacao = typeof CLASSIFICACOES[number];

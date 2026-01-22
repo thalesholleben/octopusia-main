@@ -30,6 +30,7 @@ interface EditRecordDialogProps {
     para?: string | null;
     tipo?: 'entrada' | 'saida';
     categoria?: string;
+    classificacao?: 'fixo' | 'variavel' | 'recorrente' | null;
     dataComprovante?: string;
   }}) => void;
   isLoading?: boolean;
@@ -49,6 +50,7 @@ export function EditRecordDialog({
   const [para, setPara] = useState('');
   const [tipo, setTipo] = useState<'entrada' | 'saida'>('saida');
   const [categoria, setCategoria] = useState('');
+  const [classificacao, setClassificacao] = useState<'fixo' | 'variavel' | 'recorrente' | ''>('');
   const [dataComprovante, setDataComprovante] = useState('');
 
   // Populate form when record changes
@@ -59,6 +61,7 @@ export function EditRecordDialog({
       setPara(record.para || '');
       setTipo(record.tipo);
       setCategoria(record.categoria);
+      setClassificacao(record.classificacao || '');
       try {
         const date = parseISO(record.dataComprovante);
         setDataComprovante(format(date, 'yyyy-MM-dd'));
@@ -103,6 +106,7 @@ export function EditRecordDialog({
         para: para.trim() || null,
         tipo,
         categoria,
+        classificacao: classificacao || null,
         dataComprovante,
       },
     });
@@ -162,14 +166,28 @@ export function EditRecordDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-dataComprovante">Data *</Label>
-              <Input
-                id="edit-dataComprovante"
-                type="date"
-                value={dataComprovante}
-                onChange={(e) => setDataComprovante(e.target.value)}
-              />
+              <Label htmlFor="edit-classificacao">Classificação</Label>
+              <Select value={classificacao || undefined} onValueChange={(v) => setClassificacao(v as any)}>
+                <SelectTrigger id="edit-classificacao">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixo">Fixo</SelectItem>
+                  <SelectItem value="variavel">Variável</SelectItem>
+                  <SelectItem value="recorrente">Recorrente</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-dataComprovante">Data *</Label>
+            <Input
+              id="edit-dataComprovante"
+              type="date"
+              value={dataComprovante}
+              onChange={(e) => setDataComprovante(e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -47,6 +47,7 @@ model FinanceRecord {
   para            String?
   tipo            String   // 'entrada' | 'saida'
   categoria       String
+  classificacao   String?  // 'fixo' | 'variavel' | 'recorrente'
   dataComprovante DateTime @map("data_comprovante") @db.Date
   createdAt       DateTime @default(now()) @map("created_at")
 

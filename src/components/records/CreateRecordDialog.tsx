@@ -28,6 +28,7 @@ interface CreateRecordDialogProps {
     para?: string;
     tipo: 'entrada' | 'saida';
     categoria: string;
+    classificacao?: 'fixo' | 'variavel' | 'recorrente';
     dataComprovante: string;
   }) => void;
   isLoading?: boolean;
@@ -42,6 +43,7 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
   const [para, setPara] = useState('');
   const [tipo, setTipo] = useState<'entrada' | 'saida'>('saida');
   const [categoria, setCategoria] = useState('');
+  const [classificacao, setClassificacao] = useState<'fixo' | 'variavel' | 'recorrente' | ''>('');
   const [dataComprovante, setDataComprovante] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   const currentCategories = tipo === 'entrada' ? categories.entrada : categories.saida;
@@ -71,6 +73,7 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
       para: para.trim() || undefined,
       tipo,
       categoria,
+      classificacao: classificacao || undefined,
       dataComprovante,
     });
 
@@ -80,6 +83,7 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
     setPara('');
     setTipo('saida');
     setCategoria('');
+    setClassificacao('');
     setDataComprovante(format(new Date(), 'yyyy-MM-dd'));
     setOpen(false);
   };
@@ -144,14 +148,28 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dataComprovante">Data *</Label>
-              <Input
-                id="dataComprovante"
-                type="date"
-                value={dataComprovante}
-                onChange={(e) => setDataComprovante(e.target.value)}
-              />
+              <Label htmlFor="classificacao">Classificação</Label>
+              <Select value={classificacao || undefined} onValueChange={(v) => setClassificacao(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixo">Fixo</SelectItem>
+                  <SelectItem value="variavel">Variável</SelectItem>
+                  <SelectItem value="recorrente">Recorrente</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dataComprovante">Data *</Label>
+            <Input
+              id="dataComprovante"
+              type="date"
+              value={dataComprovante}
+              onChange={(e) => setDataComprovante(e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

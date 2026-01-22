@@ -75,6 +75,7 @@ export function RecordTable({ records, onEdit, onDelete, isLoading }: RecordTabl
               <TableHead>Para</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Categoria</TableHead>
+              <TableHead>Classificação</TableHead>
               <TableHead className="text-right w-[100px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -110,6 +111,22 @@ export function RecordTable({ records, onEdit, onDelete, isLoading }: RecordTabl
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
                     {record.categoria}
                   </span>
+                </TableCell>
+                <TableCell>
+                  {record.classificacao ? (
+                    <span className={cn(
+                      'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                      record.classificacao === 'fixo' && 'bg-blue-500/10 text-blue-500',
+                      record.classificacao === 'variavel' && 'bg-purple-500/10 text-purple-500',
+                      record.classificacao === 'recorrente' && 'bg-cyan-500/10 text-cyan-500',
+                    )}>
+                      {record.classificacao === 'fixo' && 'Fixo'}
+                      {record.classificacao === 'variavel' && 'Variável'}
+                      {record.classificacao === 'recorrente' && 'Recorrente'}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
