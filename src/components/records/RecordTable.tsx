@@ -234,7 +234,7 @@ export function RecordTable({
       </div>
 
       {/* Pagination UI */}
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && (
         <div className="border-t p-4">
           {/* Mobile Layout */}
           <div className="flex flex-col gap-3 sm:hidden">
@@ -260,40 +260,42 @@ export function RecordTable({
               </div>
             </div>
 
-            {/* Navegação em linha */}
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!pagination.hasPrevPage}
-                onClick={() => onPageChange?.(currentPage - 1)}
-                className="h-9 gap-1"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Anterior
-              </Button>
+            {/* Navegação em linha - only show if multiple pages */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!pagination.hasPrevPage}
+                  onClick={() => onPageChange?.(currentPage - 1)}
+                  className="h-9 gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
 
-              <span className="text-sm font-medium">
-                Página {currentPage} de {pagination.totalPages}
-              </span>
+                <span className="text-sm font-medium">
+                  Página {currentPage} de {pagination.totalPages}
+                </span>
 
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!pagination.hasNextPage}
-                onClick={() => onPageChange?.(currentPage + 1)}
-                className="h-9 gap-1"
-              >
-                Próxima
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!pagination.hasNextPage}
+                  onClick={() => onPageChange?.(currentPage + 1)}
+                  className="h-9 gap-1"
+                >
+                  Próxima
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Desktop Layout */}
           <div className="hidden sm:flex items-center justify-between">
             {/* Left: Info + Page Size Selector */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground whitespace-nowrap">
               <span>
                 {pagination.totalRecords} registro{pagination.totalRecords !== 1 ? 's' : ''}
               </span>
@@ -302,7 +304,7 @@ export function RecordTable({
                   value={String(pagination.pageSize)}
                   onValueChange={(val) => onPageSizeChange?.(Number(val))}
                 >
-                  <SelectTrigger className="w-[100px] h-9">
+                  <SelectTrigger className="w-[70px] h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -310,53 +312,55 @@ export function RecordTable({
                     <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
-                <span>por página</span>
+                <span>registros por página</span>
               </div>
             </div>
 
-            {/* Right: Pagination Controls */}
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => pagination.hasPrevPage && onPageChange?.(currentPage - 1)}
-                    className={cn(
-                      !pagination.hasPrevPage && 'pointer-events-none opacity-50',
-                      'cursor-pointer'
-                    )}
-                  />
-                </PaginationItem>
+            {/* Right: Pagination Controls - only show if multiple pages */}
+            {pagination.totalPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => pagination.hasPrevPage && onPageChange?.(currentPage - 1)}
+                      className={cn(
+                        !pagination.hasPrevPage && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
+                    />
+                  </PaginationItem>
 
-                {/* Page Numbers (smart ellipsis logic) */}
-                {generatePageNumbers(pagination).map((pageNum, idx) =>
-                  pageNum === '...' ? (
-                    <PaginationItem key={`ellipsis-${idx}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        onClick={() => onPageChange?.(Number(pageNum))}
-                        isActive={currentPage === pageNum}
-                        className="cursor-pointer"
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                )}
+                  {/* Page Numbers (smart ellipsis logic) */}
+                  {generatePageNumbers(pagination).map((pageNum, idx) =>
+                    pageNum === '...' ? (
+                      <PaginationItem key={`ellipsis-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          onClick={() => onPageChange?.(Number(pageNum))}
+                          isActive={currentPage === pageNum}
+                          className="cursor-pointer"
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
 
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => pagination.hasNextPage && onPageChange?.(currentPage + 1)}
-                    className={cn(
-                      !pagination.hasNextPage && 'pointer-events-none opacity-50',
-                      'cursor-pointer'
-                    )}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => pagination.hasNextPage && onPageChange?.(currentPage + 1)}
+                      className={cn(
+                        !pagination.hasNextPage && 'pointer-events-none opacity-50',
+                        'cursor-pointer'
+                      )}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </div>
         </div>
       )}
