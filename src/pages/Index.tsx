@@ -19,7 +19,9 @@ import { EvolutionLineChart } from '@/components/dashboard/charts/EvolutionLineC
 import { MonthlyComparisonChart } from '@/components/dashboard/charts/MonthlyComparisonChart';
 import { CategoryRankingChart } from '@/components/dashboard/charts/CategoryRankingChart';
 import { CategoryEvolutionChart } from '@/components/dashboard/charts/CategoryEvolutionChart';
+import { FinancialHealthCard } from '@/components/dashboard/FinancialHealthCard';
 import { useFinancialData } from '@/hooks/useFinancialData';
+import { useHealthMetrics } from '@/hooks/useHealthMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { DateFilterType } from '@/types/financial';
 import { Card } from '@/components/ui/card';
@@ -47,6 +49,9 @@ const Index = () => {
     startDate: dateFilter.startDate,
     endDate: dateFilter.endDate,
   });
+
+  // Buscar métricas de saúde financeira
+  const { metrics, isLoading: isLoadingHealth, hasData: hasHealthData } = useHealthMetrics();
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -284,6 +289,13 @@ const Index = () => {
             <AIAlertsCard alerts={alerts} />
           </div>
         )}
+
+        {/* Financial Health Card */}
+        <FinancialHealthCard
+          metrics={metrics}
+          isLoading={isLoadingHealth}
+          hasData={hasHealthData}
+        />
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
