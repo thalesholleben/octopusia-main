@@ -212,12 +212,11 @@ export function CreateGoalDialog({ onSubmit, isLoading, trigger }: CreateGoalDia
 
             <div className="space-y-2">
               <Label htmlFor="category">Categoria (opcional)</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={category || undefined} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}

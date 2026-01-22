@@ -207,7 +207,7 @@ export default function Settings() {
           <Button
             variant="ghost"
             onClick={() => navigate('/')}
-            className="gap-2 mb-4"
+            className="gap-2 mb-4 mt-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Voltar ao Dashboard

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Target, Trophy, Flame, Plus } from 'lucide-react';
+import { AlertTriangle, Target, Trophy, Flame, Plus, ArrowLeft } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
 import { GoalStatsCards } from '@/components/goals/GoalStatsCards';
 import { GoalFilters } from '@/components/goals/GoalFilters';
@@ -126,6 +126,16 @@ const Goals = () => {
       <Header onSignOut={handleSignOut} />
 
       <main className="container px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="gap-2 mb-4 mt-4"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar ao Dashboard
+        </Button>
+
         {/* Title Section */}
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

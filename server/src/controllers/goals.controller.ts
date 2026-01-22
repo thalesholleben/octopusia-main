@@ -58,7 +58,18 @@ const updateGoalSchema = z.object({
 const filterSchema = z.object({
   status: z.enum(['ativo', 'pausado', 'concluido', 'falhou']).optional(),
   period: z.enum(['mensal', 'trimestral', 'anual', 'personalizado']).optional(),
-});
+}).passthrough(); // Permite campos extras como _t (cache-busting)
+
+// Helper para limpar query params vazios
+function cleanQueryParams(query: Record<string, any>): Record<string, any> {
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== '' && value !== undefined && value !== null && key !== '_t') {
+      cleaned[key] = value;
+    }
+  }
+  return cleaned;
+}
 
 // Helper functions
 function getLevelFromXP(xp: number): { level: number; name: string; minXP: number; nextLevelXP: number | null } {
@@ -212,7 +223,8 @@ async function checkAndAwardBadges(userId: string): Promise<string[]> {
 export const getGoals = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { status, period } = filterSchema.parse(req.query);
+    const cleanedQuery = cleanQueryParams(req.query as Record<string, any>);
+    const { status, period } = filterSchema.parse(cleanedQuery);
 
     const where: any = { userId };
     if (status) where.status = status;
