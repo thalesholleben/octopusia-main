@@ -20,6 +20,7 @@ import { MonthlyComparisonChart } from '@/components/dashboard/charts/MonthlyCom
 import { CategoryRankingChart } from '@/components/dashboard/charts/CategoryRankingChart';
 import { CategoryEvolutionChart } from '@/components/dashboard/charts/CategoryEvolutionChart';
 import { FinancialHealthCard } from '@/components/dashboard/FinancialHealthCard';
+import { WhatsAppPromoCard } from '@/components/dashboard/WhatsAppPromoCard';
 import { useFinancialData } from '@/hooks/useFinancialData';
 import { useHealthMetrics } from '@/hooks/useHealthMetrics';
 import { useAuth } from '@/contexts/AuthContext';
@@ -171,19 +172,32 @@ const Index = () => {
       <main className="container px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Filters Section */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col gap-3 sm:gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard Financeiro</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                Acompanhe suas finanças em tempo real
-              </p>
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 sm:gap-4">
+            {/* Left: Title + Filters */}
+            <div className="flex flex-col gap-3 sm:gap-4 flex-1 min-w-0">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard Financeiro</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                  Acompanhe suas finanças em tempo real
+                </p>
+              </div>
+              <FilterBar
+                dateFilter={dateFilter}
+                onDateFilterChange={setDateFilter}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+              />
             </div>
-            <FilterBar
-              dateFilter={dateFilter}
-              onDateFilterChange={setDateFilter}
-              onRefresh={handleRefresh}
-              isRefreshing={isRefreshing}
-            />
+
+            {/* Right: WhatsApp Promo (Desktop) */}
+            <div className="hidden lg:block lg:ml-4">
+              <WhatsAppPromoCard delay={50} />
+            </div>
+          </div>
+
+          {/* WhatsApp Promo (Mobile - below filters) */}
+          <div className="lg:hidden mt-3 sm:mt-4">
+            <WhatsAppPromoCard delay={50} />
           </div>
         </div>
 
