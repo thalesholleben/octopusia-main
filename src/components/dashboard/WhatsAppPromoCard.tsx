@@ -13,30 +13,25 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
     <div
       className={cn(
         'card-float opacity-0 animate-fade-up',
-        // Mobile: Horizontal layout, slim
-        'flex items-center gap-3 p-3',
-        // Desktop: Vertical layout, centered
-        'lg:flex-col lg:items-center lg:text-center lg:gap-3 lg:p-4 lg:w-[300px]',
+        // Always horizontal, slim layout
+        'flex items-center gap-3 p-3 lg:gap-4 lg:px-4 lg:py-3',
         // Premium styling
         'border-primary/20 hover:border-primary/40 transition-all hover:glow-primary'
       )}
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >
       {/* Icon Badge */}
-      <div className={cn(
-        'rounded-lg bg-gradient-to-br from-primary/10 to-primary/5',
-        'p-2 lg:p-3 shrink-0'
-      )}>
-        <Bot className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />
+      <div className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-2 shrink-0">
+        <Bot className="w-5 h-5 text-primary" />
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 lg:flex-auto">
-        <h3 className="text-sm lg:text-base font-bold text-foreground mb-1">
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-bold text-foreground leading-tight">
           WhatsApp IA
         </h3>
-        <p className="text-xs lg:text-sm text-muted-foreground line-clamp-2 lg:line-clamp-3">
-          Registre entradas e saídas, tire dúvidas e receba alertas direto no WhatsApp
+        <p className="text-xs text-muted-foreground line-clamp-1 lg:line-clamp-2">
+          Registre entradas, saídas e receba alertas no WhatsApp
         </p>
       </div>
 
@@ -44,10 +39,7 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
       <Button
         asChild
         size="sm"
-        className={cn(
-          'shrink-0 gap-1.5 h-8 px-3',
-          'lg:w-full lg:mt-1 lg:h-9'
-        )}
+        className="shrink-0 gap-1.5 h-8 px-3"
       >
         <a
           href={whatsappUrl}
@@ -55,8 +47,8 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
           rel="noopener noreferrer"
         >
           <MessageCircle className="w-4 h-4" />
-          <span className="hidden sm:inline lg:inline">Chamar</span>
-          <span className="sm:hidden lg:hidden">Chat</span>
+          <span className="hidden sm:inline">Chamar</span>
+          <span className="sm:hidden">Chat</span>
         </a>
       </Button>
     </div>

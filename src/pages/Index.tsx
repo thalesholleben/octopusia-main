@@ -172,7 +172,7 @@ const Index = () => {
       <main className="container px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Filters Section */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 sm:gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
             {/* Left: Title + Filters */}
             <div className="flex flex-col gap-3 sm:gap-4 flex-1 min-w-0">
               <div>
@@ -190,7 +190,7 @@ const Index = () => {
             </div>
 
             {/* Right: WhatsApp Promo (Desktop) */}
-            <div className="hidden lg:block lg:ml-4">
+            <div className="hidden lg:flex lg:ml-4 lg:shrink-0">
               <WhatsAppPromoCard delay={50} />
             </div>
           </div>
