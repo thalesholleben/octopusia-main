@@ -13,17 +13,17 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
     <div
       className={cn(
         'card-float opacity-0 animate-fade-up',
-        // Mobile: Vertical, compact (icon + button only)
-        'flex flex-col items-center gap-2 p-2',
+        // Mobile: Just the button, minimal padding
+        'flex items-center p-1.5',
         // Desktop: Horizontal, slim layout
-        'lg:flex-row lg:gap-4 lg:px-4 lg:py-3',
+        'lg:gap-4 lg:px-4 lg:py-3',
         // Premium styling
         'border-primary/20 hover:border-primary/40 transition-all hover:glow-primary'
       )}
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >
-      {/* Icon Badge */}
-      <div className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-2 shrink-0">
+      {/* Icon Badge - Hidden on mobile */}
+      <div className="hidden lg:block rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-2 shrink-0">
         <Bot className="w-5 h-5 text-primary" />
       </div>
 
