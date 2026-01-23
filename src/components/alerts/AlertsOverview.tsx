@@ -75,9 +75,35 @@ export function AlertsOverview({ stats, criticalPercentage, pieChartData }: Aler
           )}
         </div>
 
-        {/* KPIs */}
+        {/* KPIs - Mobile: 3 colunas compactas / Desktop: KPICards normais */}
         <div className="flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Mobile: Mini KPIs em linha */}
+          <div className="grid grid-cols-3 gap-2 sm:hidden">
+            <div className="card-float p-2.5 border-border">
+              <div className="flex flex-col items-center text-center">
+                <Bell className="w-4 h-4 text-primary mb-1" />
+                <p className="text-lg font-bold text-foreground">{stats.totalAlerts}</p>
+                <p className="text-[8px] text-muted-foreground uppercase">Recentes</p>
+              </div>
+            </div>
+            <div className="card-float p-2.5 border-destructive/20 bg-gradient-to-br from-destructive/5 to-transparent">
+              <div className="flex flex-col items-center text-center">
+                <AlertCircle className="w-4 h-4 text-destructive mb-1" />
+                <p className="text-lg font-bold text-destructive">{stats.priorityCounts.alta}</p>
+                <p className="text-[8px] text-muted-foreground uppercase">Alta</p>
+              </div>
+            </div>
+            <div className={`card-float p-2.5 ${criticalPercentage > 30 ? 'border-warning/20 bg-gradient-to-br from-warning/5 to-transparent' : 'border-border'}`}>
+              <div className="flex flex-col items-center text-center">
+                <Percent className={`w-4 h-4 mb-1 ${criticalPercentage > 30 ? 'text-warning' : 'text-primary'}`} />
+                <p className="text-lg font-bold text-foreground">{criticalPercentage}%</p>
+                <p className="text-[8px] text-muted-foreground uppercase">Criticos</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop: KPICards normais */}
+          <div className="hidden sm:grid sm:grid-cols-3 gap-3">
             <KPICard
               title="Avisos recentes"
               value={stats.totalAlerts.toString()}

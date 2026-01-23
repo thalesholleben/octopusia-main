@@ -54,7 +54,7 @@ export function AlertCard({ alert }: AlertCardProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2">
           <Icon className={cn('w-4 h-4 mt-0.5 shrink-0', config.iconColor)} />
-          <p className="text-xs text-foreground leading-relaxed line-clamp-2">
+          <p className="text-sm sm:text-xs text-foreground leading-relaxed line-clamp-2">
             {alert.aviso}
           </p>
         </div>
