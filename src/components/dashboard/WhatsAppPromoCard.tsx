@@ -60,7 +60,7 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <MessageCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+          <MessageCircle className="hidden lg:inline-block w-4 h-4" />
           <span className="hidden lg:inline">Chamar</span>
           <span className="lg:hidden">Chat</span>
         </a>
