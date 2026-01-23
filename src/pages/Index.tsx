@@ -170,35 +170,28 @@ const Index = () => {
       <Header onSignOut={handleSignOut} />
 
       <main className="container px-4 sm:px-6 lg:px-8 pt-24 pb-12">
-        {/* Filters Section */}
+        {/* Header Section */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
-            {/* Left: Title + Filters */}
-            <div className="flex flex-col gap-3 sm:gap-4 flex-1 min-w-0">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard Financeiro</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Acompanhe suas finanças em tempo real
-                </p>
-              </div>
-              <FilterBar
-                dateFilter={dateFilter}
-                onDateFilterChange={setDateFilter}
-                onRefresh={handleRefresh}
-                isRefreshing={isRefreshing}
-              />
+          {/* Title row with WhatsApp promo on right */}
+          <div className="flex items-start justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard Financeiro</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                Acompanhe suas finanças em tempo real
+              </p>
             </div>
-
-            {/* Right: WhatsApp Promo (Desktop) */}
-            <div className="hidden lg:flex lg:ml-4 lg:shrink-0">
+            <div className="shrink-0">
               <WhatsAppPromoCard delay={50} />
             </div>
           </div>
 
-          {/* WhatsApp Promo (Mobile - below filters) */}
-          <div className="lg:hidden mt-3 sm:mt-4">
-            <WhatsAppPromoCard delay={50} />
-          </div>
+          {/* Filters */}
+          <FilterBar
+            dateFilter={dateFilter}
+            onDateFilterChange={setDateFilter}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+          />
         </div>
 
         {/* KPI Cards Grid - 2 rows × 3 cards */}

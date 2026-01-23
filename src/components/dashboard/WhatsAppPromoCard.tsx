@@ -13,8 +13,10 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
     <div
       className={cn(
         'card-float opacity-0 animate-fade-up',
-        // Always horizontal, slim layout
-        'flex items-center gap-3 p-3 lg:gap-4 lg:px-4 lg:py-3',
+        // Mobile: Vertical, compact (icon + button only)
+        'flex flex-col items-center gap-2 p-2',
+        // Desktop: Horizontal, slim layout
+        'lg:flex-row lg:gap-4 lg:px-4 lg:py-3',
         // Premium styling
         'border-primary/20 hover:border-primary/40 transition-all hover:glow-primary'
       )}
@@ -25,12 +27,12 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
         <Bot className="w-5 h-5 text-primary" />
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
+      {/* Content - Hidden on mobile, visible on desktop */}
+      <div className="hidden lg:block flex-1 min-w-0">
         <h3 className="text-sm font-bold text-foreground leading-tight">
           WhatsApp IA
         </h3>
-        <p className="text-xs text-muted-foreground line-clamp-1 lg:line-clamp-2">
+        <p className="text-xs text-muted-foreground line-clamp-2">
           Registre entradas, saídas e receba alertas no WhatsApp
         </p>
       </div>
@@ -39,16 +41,16 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
       <Button
         asChild
         size="sm"
-        className="shrink-0 gap-1.5 h-8 px-3"
+        className="shrink-0 gap-1.5 h-7 px-2 text-xs lg:h-8 lg:px-3 lg:text-sm"
       >
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
         >
-          <MessageCircle className="w-4 h-4" />
-          <span className="hidden sm:inline">Chamar</span>
-          <span className="sm:hidden">Chat</span>
+          <MessageCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+          <span className="hidden lg:inline">Chamar</span>
+          <span className="lg:hidden">Chat</span>
         </a>
       </Button>
     </div>
