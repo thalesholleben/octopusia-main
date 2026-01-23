@@ -1,13 +1,26 @@
 import { Bot, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface WhatsAppPromoCardProps {
   delay?: number;
 }
 
 export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
-  const whatsappUrl = "https://api.whatsapp.com/send/?phone=5566992457182&text=Ol%C3%A1%2C+gostaria+de+ativar+meu+n%C3%BAmero.&type=phone_number&app_absent=0";
+  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/config/whatsapp-url`)
+      .then(res => res.json())
+      .then(data => setWhatsappUrl(data.url))
+      .catch(() => setWhatsappUrl(null));
+  }, []);
+
+  // Não renderiza se não tiver URL configurada
+  if (!whatsappUrl) return null;
 
   return (
     <div
@@ -22,9 +35,9 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
       )}
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >
-      {/* Icon Badge - Hidden on mobile */}
-      <div className="hidden lg:block rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-2 shrink-0">
-        <Bot className="w-5 h-5 text-primary" />
+      {/* Icon Badge - Small on mobile, normal on desktop */}
+      <div className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-1 lg:p-2 shrink-0">
+        <Bot className="w-3.5 h-3.5 lg:w-5 lg:h-5 text-primary" />
       </div>
 
       {/* Content - Hidden on mobile, visible on desktop */}

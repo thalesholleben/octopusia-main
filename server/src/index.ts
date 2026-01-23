@@ -58,6 +58,11 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Public config - WhatsApp Agent URL
+app.get('/api/config/whatsapp-url', (req, res) => {
+  res.json({ url: process.env.WHATSAPP_AGENT_URL || null });
+});
+
 // Error handler (must be last)
 app.use(errorHandler);
 
