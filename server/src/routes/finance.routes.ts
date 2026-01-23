@@ -5,6 +5,7 @@ import {
   updateFinanceRecord,
   deleteFinanceRecord,
   getAIAlerts,
+  getAlertsPage,
   getStatistics,
   getClients,
   getCategories,
@@ -32,6 +33,7 @@ router.put('/categories/:id', updateCustomCategory);
 router.delete('/categories/:id', deleteCustomCategory);
 
 // Other endpoints
+router.get('/alerts/page', getAlertsPage);
 router.get('/alerts', getAIAlerts);
 router.get('/statistics', getStatistics);
 router.get('/clients', getClients);

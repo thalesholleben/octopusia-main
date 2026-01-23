@@ -107,6 +107,16 @@ export interface AIAlert {
   updatedAt: string;
 }
 
+export interface AlertsPageStats {
+  totalAlerts: number;
+  priorityCounts: { alta: number; media: number; baixa: number };
+}
+
+export interface AlertsPageResponse {
+  alerts: AIAlert[];
+  stats: AlertsPageStats;
+}
+
 export interface Statistics {
   totalEntradas: number;
   totalSaidas: number;
@@ -195,6 +205,8 @@ export const financeAPI = {
     api.delete<{ message: string }>(`/finance/records/${id}`),
 
   getAlerts: () => api.get<{ alerts: AIAlert[] }>('/finance/alerts'),
+
+  getAlertsPage: () => api.get<AlertsPageResponse>('/finance/alerts/page'),
 
   getStatistics: (params?: { startDate?: string; endDate?: string }) =>
     api.get<Statistics>('/finance/statistics', { params }),

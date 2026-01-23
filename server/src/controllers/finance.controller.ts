@@ -489,3 +489,43 @@ export const deleteCustomCategory = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao excluir categoria' });
   }
 };
+
+// Página de alertas - últimos 30 alertas ordenados por prioridade
+export const getAlertsPage = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    // Últimos 30 alertas
+    const alerts = await prisma.aiAlert.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    });
+
+    // Ordenar por prioridade (alta > media > baixa), depois por data
+    const priorityOrder: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
+    const sortedAlerts = alerts.sort((a, b) => {
+      const priorityDiff = priorityOrder[a.prioridade] - priorityOrder[b.prioridade];
+      if (priorityDiff !== 0) return priorityDiff;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    // Contagem por prioridade (dos 30 alertas)
+    const priorityCounts = {
+      alta: alerts.filter(a => a.prioridade === 'alta').length,
+      media: alerts.filter(a => a.prioridade === 'media').length,
+      baixa: alerts.filter(a => a.prioridade === 'baixa').length,
+    };
+
+    res.json({
+      alerts: sortedAlerts,
+      stats: {
+        totalAlerts: alerts.length,
+        priorityCounts,
+      },
+    });
+  } catch (error) {
+    console.error('[getAlertsPage] error:', error);
+    res.status(500).json({ error: 'Erro ao buscar alertas' });
+  }
+};

@@ -1,4 +1,4 @@
-import { LogOut, Settings, Target, FileText } from 'lucide-react';
+import { LogOut, Settings, Target, FileText, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import octopusLogo from '@/assets/octopus-logo.svg';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,16 @@ export function Header({ onSignOut }: HeaderProps) {
           >
             <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Registros</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/alerts')}
+            className="gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
+          >
+            <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Avisos</span>
           </Button>
 
           <Button
