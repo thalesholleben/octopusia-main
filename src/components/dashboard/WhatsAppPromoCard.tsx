@@ -36,10 +36,9 @@ export function WhatsAppPromoCard({ delay = 0 }: WhatsAppPromoCardProps) {
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >
       {/* Icon Badge - Small on mobile, normal on desktop */}
-      <div className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-1 lg:p-2 shrink-0">
-        <Bot className="w-3.5 h-3.5 lg:w-5 lg:h-5 text-primary" />
-      </div>
-
+<div className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-1 lg:p-2 shrink-0 mr-[5px]">
+  <Bot className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
+</div>
       {/* Content - Hidden on mobile, visible on desktop */}
       <div className="hidden lg:block flex-1 min-w-0">
         <h3 className="text-sm font-bold text-foreground leading-tight">
