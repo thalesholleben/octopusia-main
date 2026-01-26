@@ -1,7 +1,11 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { subMonths } from 'date-fns';
+import { subMonths, parseISO, startOfDay } from 'date-fns';
 import prisma from '../config/database';
+import { FinanceService } from '../services/finance.service';
+
+// Instanciar o FinanceService
+const financeService = new FinanceService(prisma);
 
 // Schema de validação para filtros
 const filterSchema = z.object({
@@ -154,51 +158,92 @@ export const getAIAlerts = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * GET /api/finance/summary
+ * Retorna resumo financeiro completo (KPIs + registros + alertas)
+ * Autenticação: JWT (Bearer token)
+ */
+export const getFinanceSummary = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const filters = filterSchema.parse(req.query);
+
+    // Buscar dados em paralelo
+    const [kpis, records, alerts] = await Promise.all([
+      financeService.getKPIs(userId, filters),
+      financeService.getRecords(userId, filters),
+      financeService.getAlerts(userId),
+    ]);
+
+    // Controller decide o formato da resposta
+    res.json({ kpis, records, alerts });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    console.error('[getFinanceSummary] error:', error);
+    res.status(500).json({ error: 'Erro ao buscar resumo financeiro' });
+  }
+};
+
+/**
+ * GET /api/internal/finance/summary
+ * Retorna apenas KPIs financeiros para uso interno (n8n)
+ * Autenticação: X-Internal-Key header
+ */
+export const getInternalFinanceSummary = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.query;
+
+    // Validar userId obrigatório
+    if (!userId || typeof userId !== 'string') {
+      return res.status(400).json({ error: 'userId é obrigatório' });
+    }
+
+    // Verificar se usuário existe
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Validar e aplicar filtros
+    const filters = filterSchema.parse(req.query);
+
+    // Retornar apenas KPIs (sem records e alerts)
+    const kpis = await financeService.getKPIs(userId, filters);
+
+    res.json({ kpis });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    console.error('[getInternalFinanceSummary] error:', error);
+    res.status(500).json({ error: 'Erro ao buscar KPIs' });
+  }
+};
+
 // Endpoint para estatísticas (KPIs)
 export const getStatistics = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { startDate, endDate } = filterSchema.parse(req.query);
+    const filters = filterSchema.parse(req.query);
 
-    const where: any = { userId };
+    // Usar o FinanceService para calcular KPIs
+    const kpis = await financeService.getKPIs(userId, filters);
 
-    if (startDate || endDate) {
-      where.dataComprovante = {};
-      if (startDate) {
-        const [year, month, day] = startDate.split('-').map(Number);
-        where.dataComprovante.gte = new Date(year, month - 1, day, 0, 0, 0);
-      }
-      if (endDate) {
-        const [year, month, day] = endDate.split('-').map(Number);
-        where.dataComprovante.lte = new Date(year, month - 1, day, 23, 59, 59);
-      }
-    }
-
-    // Somas por tipo
-    const entradas = await prisma.financeRecord.aggregate({
-      where: { ...where, tipo: 'entrada' },
-      _sum: { valor: true },
-    });
-
-    const saidas = await prisma.financeRecord.aggregate({
-      where: { ...where, tipo: 'saida' },
-      _sum: { valor: true },
-    });
-
-    const totalEntradas = Number(entradas._sum.valor || 0);
-    const totalSaidas = Number(saidas._sum.valor || 0);
-    const saldo = totalEntradas - totalSaidas;
-
-    // Contar transações
-    const totalTransacoes = await prisma.financeRecord.count({ where });
-
+    // Manter compatibilidade com resposta antiga (campo totalEntradas/totalSaidas)
     res.json({
-      totalEntradas,
-      totalSaidas,
-      saldo,
-      totalTransacoes,
+      totalEntradas: kpis.entradas,
+      totalSaidas: kpis.saidas,
+      saldo: kpis.saldo,
+      totalTransacoes: kpis.totalTransacoes,
+      // Incluir KPIs adicionais para possível uso futuro
+      ...kpis,
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
     console.error('Get statistics error:', error);
     res.status(500).json({ error: 'Erro ao calcular estatísticas' });
   }
@@ -234,10 +279,9 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const data = createRecordSchema.parse(req.body);
 
-    // Parse date in local timezone to avoid UTC conversion issues
-    // Input: "2026-01-22" -> Output: Date object at local noon
-    const [year, month, day] = data.dataComprovante.split('-').map(Number);
-    const localDate = new Date(year, month - 1, day, 12, 0, 0);
+    // Parse date as UTC (YYYY-MM-DD -> início do dia em UTC)
+    // Input: "2026-01-22" -> Output: Date object at UTC midnight
+    const utcDate = startOfDay(parseISO(data.dataComprovante + 'T00:00:00Z'));
 
     const record = await prisma.financeRecord.create({
       data: {
@@ -248,7 +292,7 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
         tipo: data.tipo,
         categoria: data.categoria,
         classificacao: data.classificacao,
-        dataComprovante: localDate,
+        dataComprovante: utcDate,
       },
     });
 
@@ -281,11 +325,10 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Registro não encontrado' });
     }
 
-    // Parse date in local timezone if provided
-    let localDate;
+    // Parse date in UTC if provided
+    let utcDate;
     if (data.dataComprovante !== undefined) {
-      const [year, month, day] = data.dataComprovante.split('-').map(Number);
-      localDate = new Date(year, month - 1, day, 12, 0, 0);
+      utcDate = startOfDay(parseISO(data.dataComprovante + 'T00:00:00Z'));
     }
 
     const record = await prisma.financeRecord.update({
@@ -297,7 +340,7 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
         ...(data.tipo !== undefined && { tipo: data.tipo }),
         ...(data.categoria !== undefined && { categoria: data.categoria }),
         ...(data.classificacao !== undefined && { classificacao: data.classificacao }),
-        ...(localDate !== undefined && { dataComprovante: localDate }),
+        ...(utcDate !== undefined && { dataComprovante: utcDate }),
       },
     });
 

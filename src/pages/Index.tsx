@@ -196,43 +196,72 @@ const Index = () => {
 
         {/* KPI Cards Grid - 2 rows × 3 cards (desktop) | 4 rows (mobile) */}
         <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-          {/* First row - Saldo Total + Margem/Variação */}
+          {/* First row - Saldo Atual + Entradas + Saídas */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {/* 1. Saldo Total (100% mobile, 33% desktop) */}
+            {/* 1. Saldo Atual (100% mobile, 33% desktop) */}
             <div className="col-span-2 sm:col-span-1">
               <KPICard
-                title="Saldo Total"
-                value={formatCurrency(kpis.entradas)}
+                title="Saldo Atual"
+                value={formatCurrency(kpis.lucroLiquido)}
                 subtitle={
                   <span>
-                    <span className="text-muted-foreground">Lucro: </span>
-                    <span className={kpis.lucroLiquido >= 0 ? 'text-success' : 'text-destructive'}>
-                      {formatCurrency(kpis.lucroLiquido)}
+                    <span className="text-muted-foreground">Margem: </span>
+                    <span className={kpis.margemLiquida >= 0 ? 'text-success' : 'text-destructive'}>
+                      {kpis.margemLiquida.toFixed(1)}%
                     </span>
                   </span>
                 }
                 icon={<Wallet className="w-4 h-4 sm:w-5 sm:h-5" />}
-                variant="positive"
+                variant={kpis.lucroLiquido >= 0 ? 'positive' : 'negative'}
                 delay={100}
               />
             </div>
 
-            {/* 2. Margem Líquida (50% mobile, 33% desktop) */}
+            {/* 2. Total de Entradas (50% mobile, 33% desktop) */}
             <div className="col-span-1">
               <KPICard
-                title="Margem Líquida"
-                value={`${kpis.margemLiquida.toFixed(1)}%`}
+                title="Total de Entradas"
+                value={formatCurrency(kpis.entradas)}
                 trend={{
-                  value: kpis.variacaoMargem,
+                  value: kpis.variacaoMensal,
                   label: 'vs mês anterior'
                 }}
-                icon={<Percent className="w-4 h-4 sm:w-5 sm:h-5" />}
-                variant={kpis.margemLiquida >= 0 ? 'positive' : 'negative'}
+                icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
+                variant="positive"
                 delay={150}
               />
             </div>
 
-            {/* 3. Variação Mensal (50% mobile, 33% desktop) */}
+            {/* 3. Total de Saídas (50% mobile, 33% desktop) */}
+            <div className="col-span-1">
+              <KPICard
+                title="Total de Saídas"
+                value={formatCurrency(Math.abs(kpis.saidas))}
+                trend={{
+                  value: -kpis.variacaoSaidas,
+                  label: 'vs mês anterior'
+                }}
+                icon={<TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
+                variant="negative"
+                delay={200}
+              />
+            </div>
+          </div>
+
+          {/* Second row - Categoria + Variação + Sazonalidade */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            {/* 4. Maior Categoria (50% mobile, 33% desktop) */}
+            <div className="col-span-1">
+              <KPICard
+                title="Maior Categoria"
+                value={topCategory?.name || '-'}
+                subtitle={topCategory ? formatCurrency(topCategory.value) : undefined}
+                icon={<Tag className="w-4 h-4 sm:w-5 sm:h-5" />}
+                delay={250}
+              />
+            </div>
+
+            {/* 5. Variação Mensal (50% mobile, 33% desktop) */}
             <div className="col-span-1">
               <KPICard
                 title="Variação Mensal"
@@ -246,43 +275,14 @@ const Index = () => {
                 }}
                 icon={<BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />}
                 variant={kpis.variacaoMensal <= 0 ? 'positive' : 'negative'}
-                delay={200}
-              />
-            </div>
-          </div>
-
-          {/* Second row - Categoria/Saídas + Sazonalidade */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {/* 4. Maior Categoria (50% mobile, 33% desktop) */}
-            <div className="col-span-1">
-              <KPICard
-                title="Maior Categoria"
-                value={topCategory?.name || '-'}
-                subtitle={topCategory ? formatCurrency(topCategory.value) : undefined}
-                icon={<Tag className="w-4 h-4 sm:w-5 sm:h-5" />}
-                delay={250}
-              />
-            </div>
-
-            {/* 5. Total de Saídas (50% mobile, 33% desktop) */}
-            <div className="col-span-1">
-              <KPICard
-                title="Total de Saídas"
-                value={formatCurrency(Math.abs(kpis.saidas))}
-                trend={{
-                  value: -kpis.variacaoSaidas,
-                  label: 'vs mês anterior'
-                }}
-                icon={<TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
-                variant="negative"
                 delay={300}
               />
             </div>
 
-            {/* 6. Sazonalidade (100% mobile, 33% desktop) */}
+            {/* 6. Sazonalidades (100% mobile, 33% desktop) */}
             <div className="col-span-2 sm:col-span-1">
               <KPICard
-                title={sazonalidadeShowEntradas ? "Sazonalidade (Entradas)" : "Sazonalidade (Saídas)"}
+                title={sazonalidadeShowEntradas ? "Sazonalidades (Entradas)" : "Sazonalidades (Saídas)"}
                 value={sazonalidadeData ? formatCurrency(sazonalidadeData.maxValue) : '-'}
                 subtitle={
                   sazonalidadeData

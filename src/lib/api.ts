@@ -124,6 +124,28 @@ export interface Statistics {
   totalTransacoes: number;
 }
 
+export interface FinanceKPIs {
+  saldo: number;
+  entradas: number;
+  saidas: number;
+  lucroLiquido: number;
+  margemLiquida: number;
+  ticketMedio: number;
+  ticketMedioEntrada: number;
+  mediaMensal: number;
+  variacaoMensal: number;
+  variacaoMensalReais: number;
+  variacaoMargem: number;
+  variacaoSaidas: number;
+  totalTransacoes: number;
+}
+
+export interface FinanceSummaryResponse {
+  kpis: FinanceKPIs;
+  records: FinanceRecord[];
+  alerts: AIAlert[];
+}
+
 export interface PaginationMeta {
   currentPage: number;
   totalPages: number;
@@ -207,6 +229,13 @@ export const financeAPI = {
   getAlerts: () => api.get<{ alerts: AIAlert[] }>('/finance/alerts'),
 
   getAlertsPage: () => api.get<AlertsPageResponse>('/finance/alerts/page'),
+
+  getSummary: (params?: {
+    startDate?: string;
+    endDate?: string;
+    tipo?: 'entrada' | 'saida';
+    categoria?: string;
+  }) => api.get<FinanceSummaryResponse>('/finance/summary', { params }),
 
   getStatistics: (params?: { startDate?: string; endDate?: string }) =>
     api.get<Statistics>('/finance/statistics', { params }),

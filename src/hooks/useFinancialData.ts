@@ -1,13 +1,10 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { financeAPI, type FinanceRecord, type AIAlert } from '@/lib/api';
+import { financeAPI } from '@/lib/api';
 import {
   startOfToday,
   startOfMonth,
-  endOfMonth,
   subDays,
-  subMonths,
-  isWithinInterval,
   format,
   isValid,
 } from 'date-fns';
@@ -72,15 +69,15 @@ export const useFinancialData = (filters: FilterOptions) => {
     return { start, end };
   }, [filterType, startDate, endDate]);
 
-  // Buscar registros financeiros
+  // Buscar KPIs, registros e alertas do backend (tudo em uma única query)
   const {
-    data: recordsData,
-    isLoading: recordsLoading,
-    error: recordsError,
+    data: summaryData,
+    isLoading,
+    error,
   } = useQuery({
-    queryKey: ['financeRecords', dateRange.start, dateRange.end],
+    queryKey: ['financeSummary', dateRange.start, dateRange.end],
     queryFn: () =>
-      financeAPI.getRecords({
+      financeAPI.getSummary({
         startDate: format(dateRange.start, 'yyyy-MM-dd'),
         endDate: format(dateRange.end, 'yyyy-MM-dd'),
       }),
@@ -89,129 +86,33 @@ export const useFinancialData = (filters: FilterOptions) => {
     refetchOnWindowFocus: true, // Atualiza quando volta para a aba
   });
 
-  // Buscar alertas
-  const {
-    data: alertsData,
-    isLoading: alertsLoading,
-    error: alertsError,
-  } = useQuery({
-    queryKey: ['aiAlerts'],
-    queryFn: () => financeAPI.getAlerts(),
-    staleTime: 1000 * 60 * 2, // 2 minutos
-    refetchInterval: 1000 * 60 * 3, // Refetch a cada 3 minutos
-    refetchOnWindowFocus: true,
-  });
+  // KPIs vêm direto do backend (sem cálculo local)
+  const kpis = summaryData?.data.kpis || {
+    saldo: 0,
+    entradas: 0,
+    saidas: 0,
+    lucroLiquido: 0,
+    margemLiquida: 0,
+    ticketMedio: 0,
+    ticketMedioEntrada: 0,
+    mediaMensal: 0,
+    variacaoMensal: 0,
+    variacaoMensalReais: 0,
+    variacaoMargem: 0,
+    variacaoSaidas: 0,
+    totalTransacoes: 0,
+  };
 
-  const records = recordsData?.data.records || [];
-  const alerts = alertsData?.data.alerts || [];
+  const records = summaryData?.data.records || [];
+  const alerts = summaryData?.data.alerts || [];
 
-  // Filtrar por cliente se selecionado
+  // Filtrar por cliente se selecionado (filtro local apenas para UI)
   const filteredRecords = useMemo(() => {
     if (!selectedClient) return records;
     return records.filter(
       (r) => r.de === selectedClient || r.para === selectedClient
     );
   }, [records, selectedClient]);
-
-  // Calcular KPIs detalhados
-  const kpis = useMemo(() => {
-    const entradas = filteredRecords
-      .filter((r) => r.tipo === 'entrada')
-      .reduce((sum, r) => sum + Number(r.valor), 0);
-
-    const saidas = filteredRecords
-      .filter((r) => r.tipo === 'saida')
-      .reduce((sum, r) => sum + Number(r.valor), 0);
-
-    const saldo = entradas - saidas;
-
-    // Calcular ticket médio
-    const ticketMedio = filteredRecords.length > 0 ? saidas / filteredRecords.length : 0;
-
-    // Calcular média mensal real (últimos 6 meses)
-    const last6MonthsData = Array.from({ length: 6 }, (_, i) => {
-      const date = subMonths(new Date(), i);
-      const monthStart = startOfMonth(date);
-      const monthEnd = endOfMonth(date);
-
-      const monthRecords = records.filter((r) => {
-        const recordDate = safeParseDate(r.dataComprovante);
-        if (!recordDate) return false;
-        return isWithinInterval(recordDate, {
-          start: monthStart,
-          end: monthEnd,
-        });
-      });
-
-      const monthSaidas = monthRecords
-        .filter((r) => r.tipo === 'saida')
-        .reduce((sum, r) => sum + Number(r.valor), 0);
-
-      return { month: format(date, 'MMM/yy'), saidas: monthSaidas };
-    });
-
-    const mediaMensal = last6MonthsData.reduce((sum, m) => sum + m.saidas, 0) / 6;
-
-    // Comparar com mês anterior para variação
-    const prevMonthStart = subMonths(dateRange.start, 1);
-    const prevMonthEnd = subMonths(dateRange.end, 1);
-
-    const prevMonthRecords = records.filter((r) => {
-      const recordDate = safeParseDate(r.dataComprovante);
-      if (!recordDate) return false;
-      return isWithinInterval(recordDate, {
-        start: prevMonthStart,
-        end: prevMonthEnd,
-      });
-    });
-
-    const prevMonthSaidas = prevMonthRecords
-      .filter((r) => r.tipo === 'saida')
-      .reduce((sum, r) => sum + Number(r.valor), 0);
-
-    const prevMonthEntradas = prevMonthRecords
-      .filter((r) => r.tipo === 'entrada')
-      .reduce((sum, r) => sum + Number(r.valor), 0);
-
-    const variacaoMensal =
-      prevMonthSaidas > 0 ? ((saidas - prevMonthSaidas) / prevMonthSaidas) * 100 : 0;
-
-    // Valor absoluto da variação mensal em R$
-    const variacaoMensalReais = saidas - prevMonthSaidas;
-
-    // Calcular lucro líquido e margem
-    const lucroLiquido = entradas - saidas;
-    const margemLiquida = entradas > 0 ? (lucroLiquido / entradas) * 100 : 0;
-
-    // Calcular margem do mês anterior
-    const prevMonthLucro = prevMonthEntradas - prevMonthSaidas;
-    const prevMonthMargem = prevMonthEntradas > 0
-      ? (prevMonthLucro / prevMonthEntradas) * 100
-      : 0;
-
-    // Variação da margem (diferença absoluta, não percentual)
-    const variacaoMargem = margemLiquida - prevMonthMargem;
-
-    // Variação de saídas (mesma lógica de variacaoMensal)
-    const variacaoSaidas = prevMonthSaidas > 0
-      ? ((saidas - prevMonthSaidas) / prevMonthSaidas) * 100
-      : 0;
-
-    return {
-      saldo,
-      entradas,
-      saidas,
-      lucroLiquido,
-      margemLiquida,
-      variacaoMargem,
-      variacaoSaidas,
-      ticketMedio,
-      variacaoMensal,
-      variacaoMensalReais,
-      totalTransacoes: filteredRecords.length,
-      mediaMensal,
-    };
-  }, [filteredRecords, dateRange, records]);
 
   // Dados para gráficos
   const chartData = useMemo(() => {
@@ -258,9 +159,9 @@ export const useFinancialData = (filters: FilterOptions) => {
   return {
     records: filteredRecords,
     alerts,
-    kpis,
-    chartData,
-    isLoading: recordsLoading || alertsLoading,
-    error: recordsError || alertsError,
+    kpis,      // KPIs vêm do backend, não calculados localmente
+    chartData, // Apenas agregações para UI (gráficos)
+    isLoading,
+    error,
   };
 };

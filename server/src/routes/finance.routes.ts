@@ -12,6 +12,7 @@ import {
   createCustomCategory,
   updateCustomCategory,
   deleteCustomCategory,
+  getFinanceSummary,
 } from '../controllers/finance.controller';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
@@ -31,6 +32,9 @@ router.get('/categories', getCategories);
 router.post('/categories', createCustomCategory);
 router.put('/categories/:id', updateCustomCategory);
 router.delete('/categories/:id', deleteCustomCategory);
+
+// Summary (KPIs + records + alerts)
+router.get('/summary', getFinanceSummary);
 
 // Other endpoints
 router.get('/alerts/page', getAlertsPage);

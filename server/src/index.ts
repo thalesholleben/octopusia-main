@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.routes';
 import financeRoutes from './routes/finance.routes';
 import userRoutes from './routes/user.routes';
 import goalsRoutes from './routes/goals.routes';
+import internalRoutes from './routes/internal.routes';
 import { errorHandler } from './middlewares/errorHandler.middleware';
 
 config();
@@ -25,7 +26,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:8080',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Registration-Key'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Registration-Key', 'X-Internal-Key'],
 }));
 app.use(express.json());
 app.use(passport.initialize());
@@ -52,6 +53,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/goals', goalsRoutes);
+
+// Internal routes (for n8n automation)
+app.use('/api/internal', internalRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

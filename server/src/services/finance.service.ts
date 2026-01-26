@@ -1,0 +1,307 @@
+import { PrismaClient } from '@prisma/client';
+import {
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+  isWithinInterval,
+  parseISO,
+  startOfDay,
+  endOfDay,
+} from 'date-fns';
+import type {
+  FinanceFilters,
+  FinanceKPIs,
+  FinanceRecordDTO,
+  AIAlertDTO,
+} from '../types/finance.types';
+
+export class FinanceService {
+  constructor(private prisma: PrismaClient) {}
+
+  /**
+   * Calcula todos os KPIs financeiros
+   */
+  async getKPIs(
+    userId: string,
+    filters: FinanceFilters
+  ): Promise<FinanceKPIs> {
+    // Buscar registros filtrados (para cálculos que respeitam filtros)
+    const filteredRecords = await this.getRecords(userId, filters);
+
+    // Buscar TODOS os registros (para mediaMensal que ignora filtros)
+    const allRecords = await this.getAllRecords(userId);
+
+    // Calcular entradas, saídas e saldo
+    const entradas = filteredRecords
+      .filter((r) => r.tipo === 'entrada')
+      .reduce((sum, r) => sum + Number(r.valor), 0);
+
+    const saidas = filteredRecords
+      .filter((r) => r.tipo === 'saida')
+      .reduce((sum, r) => sum + Number(r.valor), 0);
+
+    const saldo = entradas - saidas;
+    const lucroLiquido = entradas - saidas;
+
+    // Calcular margem líquida
+    const margemLiquida = entradas > 0 ? (lucroLiquido / entradas) * 100 : 0;
+
+    // Calcular ticket médio de saída (apenas transações de saída)
+    const totalTransacoes = filteredRecords.length;
+    const totalSaidasTransacoes = filteredRecords.filter(
+      (r) => r.tipo === 'saida'
+    ).length;
+    const ticketMedio =
+      totalSaidasTransacoes > 0 ? saidas / totalSaidasTransacoes : 0;
+
+    // Calcular ticket médio de entrada (apenas transações de entrada)
+    const totalEntradasTransacoes = filteredRecords.filter(
+      (r) => r.tipo === 'entrada'
+    ).length;
+    const ticketMedioEntrada =
+      totalEntradasTransacoes > 0 ? entradas / totalEntradasTransacoes : 0;
+
+    // Calcular média mensal (últimos 6 meses - IGNORA FILTROS)
+    const mediaMensal = this.calculateMediaMensal(allRecords);
+
+    // Calcular variação mensal (compara com mês anterior)
+    const { variacaoMensal, variacaoMensalReais, variacaoMargem, variacaoSaidas } =
+      await this.calculateVariacoes(userId, filters, saidas, margemLiquida);
+
+    return {
+      saldo,
+      entradas,
+      saidas,
+      lucroLiquido,
+      margemLiquida,
+      ticketMedio,
+      ticketMedioEntrada,
+      mediaMensal,
+      variacaoMensal,
+      variacaoMensalReais,
+      variacaoMargem,
+      variacaoSaidas,
+      totalTransacoes,
+    };
+  }
+
+  /**
+   * Buscar registros com filtros aplicados
+   */
+  async getRecords(
+    userId: string,
+    filters: FinanceFilters
+  ): Promise<FinanceRecordDTO[]> {
+    const where: any = { userId };
+
+    // Aplicar filtros de data (UTC)
+    if (filters.startDate || filters.endDate) {
+      where.dataComprovante = {};
+      if (filters.startDate) {
+        // Parse como UTC: YYYY-MM-DD -> início do dia em UTC
+        where.dataComprovante.gte = startOfDay(parseISO(filters.startDate + 'T00:00:00Z'));
+      }
+      if (filters.endDate) {
+        // Parse como UTC: YYYY-MM-DD -> fim do dia em UTC
+        where.dataComprovante.lte = endOfDay(parseISO(filters.endDate + 'T23:59:59Z'));
+      }
+    }
+
+    // Aplicar filtros de tipo e categoria
+    if (filters.tipo) {
+      where.tipo = filters.tipo;
+    }
+    if (filters.categoria) {
+      where.categoria = filters.categoria;
+    }
+
+    const records = await this.prisma.financeRecord.findMany({
+      where,
+      orderBy: { dataComprovante: 'desc' },
+    });
+
+    return records.map((r) => ({
+      id: r.id,
+      tipo: r.tipo as 'entrada' | 'saida',
+      valor: Number(r.valor),
+      categoria: r.categoria,
+      de: r.de,
+      para: r.para,
+      dataComprovante: r.dataComprovante.toISOString(),
+      descricao: r.descricao || undefined,
+      classificacao: r.classificacao || undefined,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+  }
+
+  /**
+   * Buscar TODOS os registros (sem filtros de data/tipo/categoria)
+   * Usado para calcular mediaMensal que ignora filtros do usuário
+   */
+  private async getAllRecords(userId: string): Promise<FinanceRecordDTO[]> {
+    const records = await this.prisma.financeRecord.findMany({
+      where: { userId },
+      orderBy: { dataComprovante: 'desc' },
+    });
+
+    return records.map((r) => ({
+      id: r.id,
+      tipo: r.tipo as 'entrada' | 'saida',
+      valor: Number(r.valor),
+      categoria: r.categoria,
+      de: r.de,
+      para: r.para,
+      dataComprovante: r.dataComprovante.toISOString(),
+      descricao: r.descricao || undefined,
+      classificacao: r.classificacao || undefined,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+  }
+
+  /**
+   * Buscar alertas IA
+   */
+  async getAlerts(userId: string): Promise<AIAlertDTO[]> {
+    const alerts = await this.prisma.aiAlert.findMany({
+      where: { userId },
+      orderBy: [{ prioridade: 'asc' }, { createdAt: 'desc' }],
+      take: 10,
+    });
+
+    // Mapear prioridade para ordem correta: alta > media > baixa
+    const priorityOrder = { alta: 1, media: 2, baixa: 3 };
+
+    return alerts
+      .sort((a, b) => {
+        const orderA = priorityOrder[a.prioridade as keyof typeof priorityOrder];
+        const orderB = priorityOrder[b.prioridade as keyof typeof priorityOrder];
+        if (orderA !== orderB) return orderA - orderB;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      })
+      .map((a) => ({
+        id: a.id,
+        tipo: a.tipo,
+        mensagem: a.mensagem,
+        prioridade: a.prioridade as 'baixa' | 'media' | 'alta',
+        createdAt: a.createdAt.toISOString(),
+      }));
+  }
+
+  /**
+   * Calcular média mensal dos últimos 6 meses
+   * SEMPRE usa últimos 6 meses, independente dos filtros do usuário
+   */
+  private calculateMediaMensal(allRecords: FinanceRecordDTO[]): number {
+    const last6MonthsData = Array.from({ length: 6 }, (_, i) => {
+      const date = subMonths(new Date(), i);
+      const monthStart = startOfMonth(date);
+      const monthEnd = endOfMonth(date);
+
+      const monthRecords = allRecords.filter((r) => {
+        try {
+          const recordDate = new Date(r.dataComprovante);
+          if (isNaN(recordDate.getTime())) return false;
+
+          return isWithinInterval(recordDate, {
+            start: monthStart,
+            end: monthEnd,
+          });
+        } catch {
+          return false;
+        }
+      });
+
+      const monthSaidas = monthRecords
+        .filter((r) => r.tipo === 'saida')
+        .reduce((sum, r) => sum + Number(r.valor), 0);
+
+      return monthSaidas;
+    });
+
+    const totalSaidas = last6MonthsData.reduce((sum, saidas) => sum + saidas, 0);
+    return totalSaidas / 6;
+  }
+
+  /**
+   * Calcular variações comparando com período anterior
+   */
+  private async calculateVariacoes(
+    userId: string,
+    filters: FinanceFilters,
+    saidasAtuais: number,
+    margemAtual: number
+  ): Promise<{
+    variacaoMensal: number;
+    variacaoMensalReais: number;
+    variacaoMargem: number;
+    variacaoSaidas: number;
+  }> {
+    // Determinar período anterior baseado nos filtros
+    let prevStartDate: Date;
+    let prevEndDate: Date;
+
+    if (filters.startDate && filters.endDate) {
+      // Se há filtros customizados, usar período anterior do mesmo tamanho (UTC)
+      const currentStart = parseISO(filters.startDate + 'T00:00:00Z');
+      const currentEnd = parseISO(filters.endDate + 'T23:59:59Z');
+
+      const diffDays = Math.floor(
+        (currentEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      prevEndDate = new Date(currentStart);
+      prevEndDate.setDate(prevEndDate.getDate() - 1);
+      prevStartDate = new Date(prevEndDate);
+      prevStartDate.setDate(prevStartDate.getDate() - diffDays);
+    } else {
+      // Se não há filtros, comparar mês atual com mês anterior (UTC)
+      const now = new Date();
+      prevStartDate = startOfMonth(subMonths(now, 1));
+      prevEndDate = endOfMonth(subMonths(now, 1));
+    }
+
+    // Buscar registros do período anterior
+    const prevRecords = await this.prisma.financeRecord.findMany({
+      where: {
+        userId,
+        dataComprovante: {
+          gte: prevStartDate,
+          lte: prevEndDate,
+        },
+        ...(filters.tipo && { tipo: filters.tipo }),
+        ...(filters.categoria && { categoria: filters.categoria }),
+      },
+    });
+
+    const prevSaidas = prevRecords
+      .filter((r) => r.tipo === 'saida')
+      .reduce((sum, r) => sum + Number(r.valor), 0);
+
+    const prevEntradas = prevRecords
+      .filter((r) => r.tipo === 'entrada')
+      .reduce((sum, r) => sum + Number(r.valor), 0);
+
+    // Calcular margem do período anterior
+    const prevLucro = prevEntradas - prevSaidas;
+    const prevMargem = prevEntradas > 0 ? (prevLucro / prevEntradas) * 100 : 0;
+
+    // Calcular variações
+    const variacaoMensal =
+      prevSaidas > 0 ? ((saidasAtuais - prevSaidas) / prevSaidas) * 100 : 0;
+
+    const variacaoMensalReais = saidasAtuais - prevSaidas;
+
+    const variacaoMargem = margemAtual - prevMargem;
+
+    const variacaoSaidas = variacaoMensal; // Igual a variacaoMensal
+
+    return {
+      variacaoMensal,
+      variacaoMensalReais,
+      variacaoMargem,
+      variacaoSaidas,
+    };
+  }
+}
