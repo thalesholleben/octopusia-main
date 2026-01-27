@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, FileText, Key, MessageCircle, Unlink, Bell, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, FileText, Key, MessageCircle, Unlink, Bell, Lock, RotateCcw } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { userAPI } from '@/lib/api';
+import { userAPI, goalsAPI } from '@/lib/api';
+import { ResetLevelDialog } from '@/components/gamification/ResetLevelDialog';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -44,6 +46,20 @@ export default function Settings() {
   const [notifyChat, setNotifyChat] = useState(true);
   const [notifyDashboard, setNotifyDashboard] = useState(true);
   const [savingNotifications, setSavingNotifications] = useState(false);
+
+  // Reset level mutation
+  const queryClient = useQueryClient();
+  const resetLevelMutation = useMutation({
+    mutationFn: goalsAPI.resetLevel,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gamification'] });
+      toast.success('Nível resetado com sucesso!');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error || 'Erro ao resetar nível';
+      toast.error(message);
+    },
+  });
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -223,7 +239,7 @@ export default function Settings() {
           </p>
         </div>
 
-        <div className="grid gap-6 max-w-6xl lg:grid-cols-2">
+        <div className="grid gap-6 w-full lg:grid-cols-2">
           {/* Subscription Card */}
           <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
             <CardHeader>
@@ -489,6 +505,35 @@ export default function Settings() {
               >
                 {savingNotifications ? 'Salvando...' : 'Salvar Preferências'}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Reset Level Card */}
+          <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '600ms', animationFillMode: 'forwards' }}>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <RotateCcw className="w-5 h-5 text-primary" />
+                <CardTitle>Resetar Progresso</CardTitle>
+              </div>
+              <CardDescription>Reinicie seu nível e experiência de gamificação</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-secondary/30 rounded-lg border border-border space-y-2">
+                <p className="text-sm text-foreground">
+                  Esta ação irá resetar seu nível para <strong>Nível 1</strong> e sua experiência para <strong>0 XP</strong>.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  ✓ Suas metas continuarão intactas<br />
+                  ✓ Seu histórico de metas concluídas será preservado<br />
+                  ✓ Suas sequências (streaks) não serão afetadas<br />
+                  ✓ Suas conquistas (badges) serão mantidas
+                </p>
+              </div>
+
+              <ResetLevelDialog
+                onConfirm={() => resetLevelMutation.mutate()}
+                isLoading={resetLevelMutation.isPending}
+              />
             </CardContent>
           </Card>
         </div>
