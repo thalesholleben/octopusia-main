@@ -148,6 +148,16 @@ export interface FinanceSummaryResponse {
   alerts: AIAlert[];
 }
 
+export interface ExpenseDistributionItem {
+  categoria: string;
+  valor: number;
+  percentual: number;
+}
+
+export interface ExpenseDistributionResponse {
+  distribution: ExpenseDistributionItem[];
+}
+
 export interface PaginationMeta {
   currentPage: number;
   totalPages: number;
@@ -252,6 +262,12 @@ export const financeAPI = {
     tipo?: 'entrada' | 'saida';
     categoria?: string;
   }) => api.get<FinanceSummaryResponse>('/finance/summary', { params }),
+
+  getExpenseDistribution: (params?: {
+    startDate?: string;
+    endDate?: string;
+    categoria?: string;
+  }) => api.get<ExpenseDistributionResponse>('/finance/expense-distribution', { params }),
 
   getStatistics: (params?: { startDate?: string; endDate?: string }) =>
     api.get<Statistics>('/finance/statistics', { params }),

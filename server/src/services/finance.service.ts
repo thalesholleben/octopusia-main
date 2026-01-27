@@ -309,6 +309,44 @@ export class FinanceService {
   }
 
   /**
+   * Retorna dados de distribuição de gastos por categoria
+   * EXCLUI ajuste_saldo do cálculo
+   */
+  async getExpenseDistribution(
+    userId: string,
+    filters: FinanceFilters
+  ): Promise<{ categoria: string; valor: number; percentual: number }[]> {
+    // Buscar registros filtrados
+    const records = await this.getRecords(userId, filters);
+
+    // Filtrar apenas saídas e EXCLUIR ajuste_saldo
+    const expenses = records.filter(
+      (r) => r.tipo === 'saida' && r.classificacao !== 'ajuste_saldo'
+    );
+
+    // Agrupar por categoria
+    const categoryTotals: Record<string, number> = {};
+    expenses.forEach((record) => {
+      const categoria = record.categoria;
+      categoryTotals[categoria] = (categoryTotals[categoria] || 0) + Number(record.valor);
+    });
+
+    // Calcular total (sem ajuste_saldo)
+    const total = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
+
+    // Converter para array com percentuais
+    const distribution = Object.entries(categoryTotals)
+      .map(([categoria, valor]) => ({
+        categoria,
+        valor,
+        percentual: total > 0 ? (valor / total) * 100 : 0,
+      }))
+      .sort((a, b) => b.valor - a.valor);
+
+    return distribution;
+  }
+
+  /**
    * Calcular variações comparando com período anterior
    */
   private async calculateVariacoes(

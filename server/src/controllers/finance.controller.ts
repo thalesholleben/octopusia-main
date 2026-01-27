@@ -195,6 +195,28 @@ export const getFinanceSummary = async (req: Request, res: Response) => {
 };
 
 /**
+ * GET /api/finance/expense-distribution
+ * Retorna distribuição de gastos por categoria (EXCLUI ajuste_saldo)
+ * Autenticação: JWT (Bearer token)
+ */
+export const getExpenseDistribution = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const filters = filterSchema.parse(req.query);
+
+    const distribution = await financeService.getExpenseDistribution(userId, filters);
+
+    res.json({ distribution });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    console.error('[getExpenseDistribution] error:', error);
+    res.status(500).json({ error: 'Erro ao buscar distribuição de gastos' });
+  }
+};
+
+/**
  * GET /api/internal/finance/summary
  * Retorna apenas KPIs financeiros para uso interno (n8n)
  * Autenticação: X-Internal-Key header

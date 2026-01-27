@@ -1,9 +1,11 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { FinanceRecord } from '@/types/financial';
 import { PieChart as PieChartIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { financeAPI } from '@/lib/api';
+import { DateFilter } from '@/types/financial';
 
 interface ExpensePieChartProps {
-  data: FinanceRecord[];
+  filters: DateFilter;
 }
 
 const COLORS = [
@@ -21,17 +23,24 @@ const COLORS = [
   '#a855f7', // purple
 ];
 
-export function ExpensePieChart({ data }: ExpensePieChartProps) {
-  const expenses = data.filter(r => r.tipo === 'saida' && r.classificacao !== 'ajuste_saldo');
+export function ExpensePieChart({ filters }: ExpensePieChartProps) {
+  // Buscar dados do backend (já processados sem ajuste_saldo)
+  const { data: distributionData, isLoading } = useQuery({
+    queryKey: ['expenseDistribution', filters],
+    queryFn: async () => {
+      const response = await financeAPI.getExpenseDistribution({
+        startDate: filters.startDate ? filters.startDate.toISOString().split('T')[0] : undefined,
+        endDate: filters.endDate ? filters.endDate.toISOString().split('T')[0] : undefined,
+      });
+      return response.data.distribution;
+    },
+    staleTime: 30000, // 30 segundos
+  });
 
-  const categoryTotals = expenses.reduce((acc, record) => {
-    acc[record.categoria] = (acc[record.categoria] || 0) + Number(record.valor);
-    return acc;
-  }, {} as Record<string, number>);
-
-  const chartData = Object.entries(categoryTotals)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
+  const chartData = distributionData?.map(item => ({
+    name: item.categoria,
+    value: item.valor,
+  })) || [];
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
@@ -60,8 +69,13 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
   return (
     <div className="card-float p-4 sm:p-6 h-[320px] sm:h-[400px] opacity-0 animate-fade-up" style={{ animationDelay: '700ms', animationFillMode: 'forwards' }}>
       <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Distribuição de Gastos</h3>
-      
-      {chartData.length === 0 ? (
+
+      {isLoading ? (
+        <div className="h-[calc(100%-40px)] flex flex-col items-center justify-center text-muted-foreground gap-3">
+          <PieChartIcon className="w-12 h-12 opacity-30 animate-pulse" />
+          <p className="text-sm">Carregando...</p>
+        </div>
+      ) : chartData.length === 0 ? (
         <div className="h-[calc(100%-40px)] flex flex-col items-center justify-center text-muted-foreground gap-3">
           <PieChartIcon className="w-12 h-12 opacity-30" />
           <p className="text-sm">Nenhum gasto no período</p>

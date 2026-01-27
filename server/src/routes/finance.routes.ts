@@ -15,6 +15,7 @@ import {
   updateCustomCategory,
   deleteCustomCategory,
   getFinanceSummary,
+  getExpenseDistribution,
 } from '../controllers/finance.controller';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
@@ -40,6 +41,9 @@ router.delete('/categories/:id', deleteCustomCategory);
 
 // Summary (KPIs + records + alerts)
 router.get('/summary', getFinanceSummary);
+
+// Expense distribution (for pie chart - excludes ajuste_saldo)
+router.get('/expense-distribution', getExpenseDistribution);
 
 // Other endpoints
 router.get('/alerts/page', getAlertsPage);
