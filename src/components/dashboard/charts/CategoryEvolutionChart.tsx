@@ -72,6 +72,11 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
     // Filtra apenas saídas (excluindo ajustes de saldo)
     const saidasData = data.filter(record => record.tipo === 'saida' && record.classificacao !== 'ajuste_saldo');
 
+    // Se não há dados ou categorias, retorna vazio
+    if (saidasData.length === 0 || topCategories.length === 0) {
+      return [];
+    }
+
     // Agrupa por período
     const groupedData: Record<string, Record<string, number>> = {};
 
@@ -95,6 +100,11 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
     // Obtém todos os períodos ordenados
     const allPeriods = Object.keys(groupedData).sort();
 
+    // Se não há períodos após agrupamento, retorna vazio
+    if (allPeriods.length === 0) {
+      return [];
+    }
+
     // Converte para array no formato do Recharts
     return allPeriods.map((groupKey) => {
       const result: Record<string, unknown> = {
@@ -115,6 +125,9 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
   const dataPointCount = chartData.length;
   const showDots = shouldShowDots(dataPointCount);
   const xAxisInterval = getXAxisInterval(dataPointCount);
+
+  // Quando há apenas 1 período, aumenta o tamanho dos pontos para melhor visualização
+  const dotSize = dataPointCount === 1 ? 6 : (showDots ? 3 : 0);
 
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) => {
     if (active && payload && payload.length) {
@@ -186,8 +199,15 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
           <p className="text-sm text-center">Nenhum dado disponível para o período</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="flex-1 min-h-0 flex flex-col">
+          {/* Dica quando há poucos dados */}
+          {dataPointCount === 1 && (
+            <div className="text-xs text-muted-foreground text-center mb-2 px-2 shrink-0">
+              ℹ️ Apenas 1 período disponível. Adicione mais registros para ver a evolução ao longo do tempo.
+            </div>
+          )}
+          <div className="flex-1 min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 {topCategories.map((cat, index) => (
@@ -227,12 +247,13 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
                   stroke={COLORS[index % COLORS.length]}
                   strokeWidth={2}
                   fill={`url(#color${index})`}
-                  dot={showDots ? { r: 2, fill: COLORS[index % COLORS.length] } : false}
-                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  dot={dotSize > 0 ? { r: dotSize, fill: COLORS[index % COLORS.length], strokeWidth: dataPointCount === 1 ? 2 : 0, stroke: '#fff' } : false}
+                  activeDot={{ r: dataPointCount === 1 ? 8 : 5, strokeWidth: 0 }}
                 />
               ))}
             </AreaChart>
           </ResponsiveContainer>
+          </div>
         </div>
       )}
     </div>
