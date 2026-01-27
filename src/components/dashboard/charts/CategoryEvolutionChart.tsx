@@ -203,7 +203,7 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
           {/* Dica quando há poucos dados */}
           {dataPointCount === 1 && (
             <div className="text-xs text-muted-foreground text-center mb-2 px-2 shrink-0">
-              ℹ️ Apenas 1 período disponível. Adicione mais registros para ver a evolução ao longo do tempo.
+              ℹ️ Adicione mais registros para ver a evolução ao longo do tempo.
             </div>
           )}
           <div className="flex-1 min-h-0">
@@ -247,7 +247,7 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
                   stroke={COLORS[index % COLORS.length]}
                   strokeWidth={2}
                   fill={`url(#color${index})`}
-                  dot={dotSize > 0 ? { r: dotSize, fill: COLORS[index % COLORS.length], strokeWidth: dataPointCount === 1 ? 2 : 0, stroke: '#fff' } : false}
+                  dot={dotSize > 0 ? { r: dotSize, fill: COLORS[index % COLORS.length], strokeWidth: dataPointCount === 1 ? 1 : 0, stroke: '#999999' } : false}
                   activeDot={{ r: dataPointCount === 1 ? 8 : 5, strokeWidth: 0 }}
                 />
               ))}
