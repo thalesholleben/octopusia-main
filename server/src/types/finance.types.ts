@@ -26,18 +26,15 @@ export interface FinanceRecordDTO {
   tipo: 'entrada' | 'saida';
   valor: number;
   categoria: string;
-  de: string;
-  para: string;
+  de: string | null;
+  para: string | null;
   dataComprovante: string;
-  descricao?: string;
-  classificacao?: string;
+  classificacao?: string | null;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface AIAlertDTO {
   id: string;
-  tipo: string;
   mensagem: string;
   prioridade: 'baixa' | 'media' | 'alta';
   createdAt: string;

@@ -235,9 +235,7 @@ export const getStatistics = async (req: Request, res: Response) => {
     res.json({
       totalEntradas: kpis.entradas,
       totalSaidas: kpis.saidas,
-      saldo: kpis.saldo,
-      totalTransacoes: kpis.totalTransacoes,
-      // Incluir KPIs adicionais para possível uso futuro
+      // Incluir todos os KPIs (saldo, totalTransacoes, etc.)
       ...kpis,
     });
   } catch (error) {

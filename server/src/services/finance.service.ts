@@ -128,10 +128,8 @@ export class FinanceService {
       de: r.de,
       para: r.para,
       dataComprovante: r.dataComprovante.toISOString(),
-      descricao: r.descricao || undefined,
       classificacao: r.classificacao || undefined,
       createdAt: r.createdAt.toISOString(),
-      updatedAt: r.updatedAt.toISOString(),
     }));
   }
 
@@ -153,10 +151,8 @@ export class FinanceService {
       de: r.de,
       para: r.para,
       dataComprovante: r.dataComprovante.toISOString(),
-      descricao: r.descricao || undefined,
       classificacao: r.classificacao || undefined,
       createdAt: r.createdAt.toISOString(),
-      updatedAt: r.updatedAt.toISOString(),
     }));
   }
 
@@ -182,8 +178,7 @@ export class FinanceService {
       })
       .map((a) => ({
         id: a.id,
-        tipo: a.tipo,
-        mensagem: a.mensagem,
+        mensagem: a.aviso,
         prioridade: a.prioridade as 'baixa' | 'media' | 'alta',
         createdAt: a.createdAt.toISOString(),
       }));
