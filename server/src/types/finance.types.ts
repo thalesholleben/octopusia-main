@@ -35,7 +35,11 @@ export interface FinanceRecordDTO {
 
 export interface AIAlertDTO {
   id: string;
-  mensagem: string;
+  userId: string;
+  aviso: string;
+  justificativa?: string;
   prioridade: 'baixa' | 'media' | 'alta';
+  status: 'concluido' | 'ignorado' | null;
   createdAt: string;
+  updatedAt: string;
 }

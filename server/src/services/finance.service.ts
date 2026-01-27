@@ -161,7 +161,10 @@ export class FinanceService {
    */
   async getAlerts(userId: string): Promise<AIAlertDTO[]> {
     const alerts = await this.prisma.aiAlert.findMany({
-      where: { userId },
+      where: {
+        userId,
+        status: null,  // Apenas alertas ativos (não concluídos ou ignorados)
+      },
       orderBy: [{ prioridade: 'asc' }, { createdAt: 'desc' }],
       take: 10,
     });
@@ -178,9 +181,13 @@ export class FinanceService {
       })
       .map((a) => ({
         id: a.id,
-        mensagem: a.aviso,
+        userId: a.userId,
+        aviso: a.aviso,
+        justificativa: a.justificativa || undefined,
         prioridade: a.prioridade as 'baixa' | 'media' | 'alta',
+        status: a.status as 'concluido' | 'ignorado' | null,
         createdAt: a.createdAt.toISOString(),
+        updatedAt: a.updatedAt.toISOString(),
       }));
   }
 
