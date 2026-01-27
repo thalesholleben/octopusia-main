@@ -53,8 +53,10 @@ model FinanceRecord {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([dataComprovante])
+  // Índices compostos para queries comuns
+  @@index([userId, dataComprovante(sort: Desc)]) // Query principal: buscar por usuário + ordenar por data
+  @@index([userId, tipo, dataComprovante]) // Filtro por tipo + data
+  @@index([userId, categoria]) // Filtro por categoria
   @@map("finance_records")
 }
 
@@ -69,7 +71,8 @@ model AiAlert {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  // Índices compostos para queries comuns
+  @@index([userId, prioridade, createdAt(sort: Desc)]) // Buscar alertas por usuário + prioridade + data
   @@map("ai_alerts")
 }
 
@@ -93,9 +96,9 @@ model FinancialGoal {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([status])
-  @@index([endDate])
+  // Índices compostos para queries comuns
+  @@index([userId, status, endDate]) // Buscar metas ativas por usuário + ordenar por data fim
+  @@index([userId, type, status]) // Filtro por tipo de meta + status
   @@map("financial_goals")
 }
 

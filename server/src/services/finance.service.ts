@@ -189,20 +189,24 @@ export class FinanceService {
    * SEMPRE usa últimos 6 meses, independente dos filtros do usuário
    */
   private calculateMediaMensal(allRecords: FinanceRecordDTO[]): number {
+    const now = new Date();
+
     const last6MonthsData = Array.from({ length: 6 }, (_, i) => {
-      const date = subMonths(new Date(), i);
+      const date = subMonths(now, i);
       const monthStart = startOfMonth(date);
       const monthEnd = endOfMonth(date);
 
       const monthRecords = allRecords.filter((r) => {
         try {
-          const recordDate = new Date(r.dataComprovante);
-          if (isNaN(recordDate.getTime())) return false;
-
-          return isWithinInterval(recordDate, {
-            start: monthStart,
-            end: monthEnd,
-          });
+          // Parse ISO string (já é UTC por convenção)
+          const recordDate = parseISO(r.dataComprovante);
+          if (!isNaN(recordDate.getTime())) {
+            return isWithinInterval(recordDate, {
+              start: monthStart,
+              end: monthEnd,
+            });
+          }
+          return false;
         } catch {
           return false;
         }
@@ -251,7 +255,7 @@ export class FinanceService {
       prevStartDate = new Date(prevEndDate);
       prevStartDate.setDate(prevStartDate.getDate() - diffDays);
     } else {
-      // Se não há filtros, comparar mês atual com mês anterior (UTC)
+      // Se não há filtros, comparar mês atual com mês anterior
       const now = new Date();
       prevStartDate = startOfMonth(subMonths(now, 1));
       prevEndDate = endOfMonth(subMonths(now, 1));
