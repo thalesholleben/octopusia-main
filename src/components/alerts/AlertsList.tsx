@@ -4,9 +4,12 @@ import { AlertCard } from './AlertCard';
 
 interface AlertsListProps {
   alerts: AIAlert[];
+  onComplete: (id: string) => void;
+  onIgnore: (id: string) => void;
+  isUpdating?: boolean;
 }
 
-export function AlertsList({ alerts }: AlertsListProps) {
+export function AlertsList({ alerts, onComplete, onIgnore, isUpdating }: AlertsListProps) {
   if (alerts.length === 0) {
     return (
       <div className="card-float p-6 opacity-0 animate-fade-up" style={{ animationDelay: '200ms', animationFillMode: 'forwards' }}>
@@ -31,7 +34,13 @@ export function AlertsList({ alerts }: AlertsListProps) {
       {/* Mobile: 1 coluna */}
       <div className="flex flex-col gap-2 md:hidden">
         {alerts.map((alert) => (
-          <AlertCard key={alert.id} alert={alert} />
+          <AlertCard
+            key={alert.id}
+            alert={alert}
+            onComplete={onComplete}
+            onIgnore={onIgnore}
+            isUpdating={isUpdating}
+          />
         ))}
       </div>
 
@@ -39,12 +48,24 @@ export function AlertsList({ alerts }: AlertsListProps) {
       <div className="hidden md:grid md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           {column1.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} />
+            <AlertCard
+              key={alert.id}
+              alert={alert}
+              onComplete={onComplete}
+              onIgnore={onIgnore}
+              isUpdating={isUpdating}
+            />
           ))}
         </div>
         <div className="flex flex-col gap-2">
           {column2.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} />
+            <AlertCard
+              key={alert.id}
+              alert={alert}
+              onComplete={onComplete}
+              onIgnore={onIgnore}
+              isUpdating={isUpdating}
+            />
           ))}
         </div>
       </div>

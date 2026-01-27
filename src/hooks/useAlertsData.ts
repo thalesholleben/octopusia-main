@@ -1,8 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tantml:function_calls>';
 import { financeAPI, AlertsPageResponse } from '@/lib/api';
 import { useMemo } from 'react';
+import { toast } from 'sonner';
 
 export function useAlertsData() {
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['alertsPage'],
     queryFn: async () => {
@@ -10,6 +13,26 @@ export function useAlertsData() {
       return response.data;
     },
     staleTime: 2 * 60 * 1000, // 2 minutos
+  });
+
+  // Mutation for updating alert status
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'concluido' | 'ignorado' }) =>
+      financeAPI.updateAlertStatus(id, status),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['alertsPage'] });
+      queryClient.invalidateQueries({ queryKey: ['goalAlerts'] });
+      queryClient.invalidateQueries({ queryKey: ['financialSummary'] });
+
+      const message = variables.status === 'concluido'
+        ? 'Alerta marcado como concluído'
+        : 'Alerta ignorado';
+      toast.success(message);
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error || 'Erro ao atualizar alerta';
+      toast.error(message);
+    },
   });
 
   const pieChartData = useMemo(() => {
@@ -45,5 +68,7 @@ export function useAlertsData() {
     pieChartData,
     isLoading,
     error,
+    updateAlertStatus: updateStatusMutation.mutate,
+    isUpdatingStatus: updateStatusMutation.isPending,
   };
 }

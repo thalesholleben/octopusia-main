@@ -9,6 +9,7 @@ import {
   syncGoalProgress,
   getGamification,
   getGoalAlerts,
+  resetLevel,
 } from '../controllers/goals.controller';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
@@ -21,6 +22,7 @@ router.use(authenticateJWT);
 router.get('/stats', getGoalStats);
 router.get('/alerts', getGoalAlerts);
 router.get('/user/gamification', getGamification);
+router.post('/user/reset-level', resetLevel);
 
 // Goals CRUD
 router.get('/', getGoals);

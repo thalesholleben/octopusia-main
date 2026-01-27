@@ -7,6 +7,7 @@ import {
   createBalanceAdjustment,
   getAIAlerts,
   getAlertsPage,
+  updateAlertStatus,
   getStatistics,
   getClients,
   getCategories,
@@ -43,6 +44,7 @@ router.get('/summary', getFinanceSummary);
 // Other endpoints
 router.get('/alerts/page', getAlertsPage);
 router.get('/alerts', getAIAlerts);
+router.patch('/alerts/:id/status', updateAlertStatus);
 router.get('/statistics', getStatistics);
 router.get('/clients', getClients);
 

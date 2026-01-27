@@ -66,6 +66,7 @@ model AiAlert {
   aviso      String
   prioridade String   // 'baixa' | 'media' | 'alta'
   context    String   @default("dashboard") // 'dashboard' | 'goals' | 'both'
+  status     String?  // null | 'concluido' | 'ignorado'
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
@@ -73,6 +74,7 @@ model AiAlert {
 
   // Índices compostos para queries comuns
   @@index([userId, prioridade, createdAt(sort: Desc)]) // Buscar alertas por usuário + prioridade + data
+  @@index([userId, status]) // Filtrar alertas por status
   @@map("ai_alerts")
 }
 

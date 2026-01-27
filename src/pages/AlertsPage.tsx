@@ -20,6 +20,8 @@ const AlertsPage = () => {
     pieChartData,
     isLoading,
     error,
+    updateAlertStatus,
+    isUpdatingStatus,
   } = useAlertsData();
 
   // Redirect to auth if not logged in
@@ -32,6 +34,14 @@ const AlertsPage = () => {
   const handleSignOut = async () => {
     signOut();
     navigate('/auth');
+  };
+
+  const handleCompleteAlert = (id: string) => {
+    updateAlertStatus({ id, status: 'concluido' });
+  };
+
+  const handleIgnoreAlert = (id: string) => {
+    updateAlertStatus({ id, status: 'ignorado' });
   };
 
   // Show loading while checking auth
@@ -113,7 +123,12 @@ const AlertsPage = () => {
         </div>
 
         {/* Alerts List */}
-        <AlertsList alerts={alerts} />
+        <AlertsList
+          alerts={alerts}
+          onComplete={handleCompleteAlert}
+          onIgnore={handleIgnoreAlert}
+          isUpdating={isUpdatingStatus}
+        />
       </main>
     </div>
   );

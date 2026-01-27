@@ -12,6 +12,7 @@ import { LevelBadge } from '@/components/gamification/LevelBadge';
 import { ExperienceBar } from '@/components/gamification/ExperienceBar';
 import { BadgeGrid } from '@/components/gamification/BadgeGrid';
 import { MotivationalMessage } from '@/components/gamification/MotivationalMessage';
+import { ResetLevelDialog } from '@/components/gamification/ResetLevelDialog';
 import { AIAlertsCard } from '@/components/dashboard/AIAlertsCard';
 import { useGoalsData } from '@/hooks/useGoalsData';
 import { useAuth } from '@/contexts/AuthContext';
@@ -158,38 +159,46 @@ const Goals = () => {
         {/* Gamification Section */}
         {gamification && (
           <div className="card-float p-4 sm:p-6 mb-6 sm:mb-8 opacity-0 animate-fade-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
-            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-              <div className="flex items-center gap-4">
-                <LevelBadge
-                  level={gamification.level}
-                  levelName={gamification.levelName}
-                  size="lg"
-                />
-              </div>
+            <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <ExperienceBar
-                  currentXP={gamification.experience}
-                  xpProgress={gamification.xpProgress}
-                  xpForNextLevel={gamification.xpForNextLevel}
-                />
-                <div className="flex items-center gap-4 mt-3 text-xs sm:text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Trophy className="w-4 h-4 text-primary" />
-                    <span>{gamification.totalGoalsCompleted} metas concluídas</span>
+                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                  <div className="flex items-center gap-4">
+                    <LevelBadge
+                      level={gamification.level}
+                      levelName={gamification.levelName}
+                      size="lg"
+                    />
                   </div>
-                  {gamification.currentStreak > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Flame className="w-4 h-4 text-orange-500" />
-                      <span>{gamification.currentStreak} dias de streak</span>
+                  <div className="flex-1">
+                    <ExperienceBar
+                      currentXP={gamification.experience}
+                      xpProgress={gamification.xpProgress}
+                      xpForNextLevel={gamification.xpForNextLevel}
+                    />
+                    <div className="flex items-center gap-4 mt-3 text-xs sm:text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Trophy className="w-4 h-4 text-primary" />
+                        <span>{gamification.totalGoalsCompleted} metas concluídas</span>
+                      </div>
+                      {gamification.currentStreak > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Flame className="w-4 h-4 text-orange-500" />
+                          <span>{gamification.currentStreak} dias de streak</span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
+              <ResetLevelDialog
+                onConfirm={() => mutations.resetLevel()}
+                isLoading={mutations.isResettingLevel}
+              />
             </div>
 
             {/* Badges */}
             {gamification.badges.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-border">
+              <div className="mt-0 pt-4 border-t border-border">
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-3">Conquistas</p>
                 <BadgeGrid badges={gamification.badges} showLocked={false} />
               </div>

@@ -602,6 +602,35 @@ export const getGamification = async (req: Request, res: Response) => {
   }
 };
 
+export const resetLevel = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        level: 1,
+        experience: 0,
+      },
+      select: {
+        level: true,
+        experience: true,
+        totalGoalsCompleted: true,
+        currentStreak: true,
+        longestStreak: true,
+      },
+    });
+
+    res.json({
+      message: 'Nível e experiência resetados com sucesso',
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error('[resetLevel] error:', error);
+    res.status(500).json({ error: 'Erro ao resetar nível' });
+  }
+};
+
 export const getGoalAlerts = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -610,6 +639,7 @@ export const getGoalAlerts = async (req: Request, res: Response) => {
       where: {
         userId,
         context: { in: ['goals', 'both'] },
+        status: null,
       },
       orderBy: { updatedAt: 'desc' },
       take: 10,

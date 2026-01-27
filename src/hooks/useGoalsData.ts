@@ -121,6 +121,19 @@ export const useGoalsData = (filters: GoalFilters = {}) => {
     },
   });
 
+  // Reset level mutation
+  const resetLevelMutation = useMutation({
+    mutationFn: goalsAPI.resetLevel,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gamification'] });
+      toast.success('Nível resetado com sucesso!');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error || 'Erro ao resetar nível';
+      toast.error(message);
+    },
+  });
+
   const goals = goalsData?.data.goals || [];
   const stats = statsData?.data || null;
   const gamification = gamificationData?.data || null;
@@ -203,10 +216,12 @@ export const useGoalsData = (filters: GoalFilters = {}) => {
       updateGoal: updateGoalMutation.mutate,
       deleteGoal: deleteGoalMutation.mutate,
       syncProgress: syncProgressMutation.mutate,
+      resetLevel: resetLevelMutation.mutate,
       isCreating: createGoalMutation.isPending,
       isUpdating: updateGoalMutation.isPending,
       isDeleting: deleteGoalMutation.isPending,
       isSyncing: syncProgressMutation.isPending,
+      isResettingLevel: resetLevelMutation.isPending,
     },
   };
 };

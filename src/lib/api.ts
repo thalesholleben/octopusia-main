@@ -103,6 +103,7 @@ export interface AIAlert {
   userId: string;
   aviso: string;
   prioridade: 'baixa' | 'media' | 'alta';
+  status?: 'concluido' | 'ignorado' | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -240,6 +241,9 @@ export const financeAPI = {
   getAlerts: () => api.get<{ alerts: AIAlert[] }>('/finance/alerts'),
 
   getAlertsPage: () => api.get<AlertsPageResponse>('/finance/alerts/page'),
+
+  updateAlertStatus: (id: string, status: 'concluido' | 'ignorado') =>
+    api.patch<{ message: string; alert: AIAlert }>(`/finance/alerts/${id}/status`, { status }),
 
   getSummary: (params?: {
     startDate?: string;
@@ -400,4 +404,6 @@ export const goalsAPI = {
   getAlerts: () => api.get<{ alerts: AIAlert[] }>('/goals/alerts'),
 
   getGamification: () => api.get<GamificationData>('/goals/user/gamification'),
+
+  resetLevel: () => api.post<{ message: string; user: any }>('/goals/user/reset-level'),
 };

@@ -1,11 +1,15 @@
-import { CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, AlertCircle, Check, X } from 'lucide-react';
 import { AIAlert } from '@/lib/api';
 import { format, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface AlertCardProps {
   alert: AIAlert;
+  onComplete: (id: string) => void;
+  onIgnore: (id: string) => void;
+  isUpdating?: boolean;
 }
 
 const priorityConfig = {
@@ -29,7 +33,7 @@ const priorityConfig = {
   },
 };
 
-export function AlertCard({ alert }: AlertCardProps) {
+export function AlertCard({ alert, onComplete, onIgnore, isUpdating }: AlertCardProps) {
   const config = priorityConfig[alert.prioridade];
   const Icon = config.icon;
 
@@ -58,9 +62,33 @@ export function AlertCard({ alert }: AlertCardProps) {
             {alert.aviso}
           </p>
         </div>
-        <p className="text-[10px] text-muted-foreground mt-2 ml-6">
-          {formatDate(alert.createdAt)}
-        </p>
+        <div className="flex items-center justify-between mt-2 ml-6">
+          <p className="text-[10px] text-muted-foreground">
+            {formatDate(alert.createdAt)}
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-success/20 hover:text-success"
+              onClick={() => onComplete(alert.id)}
+              disabled={isUpdating}
+              title="Marcar como concluído"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-destructive/20 hover:text-destructive"
+              onClick={() => onIgnore(alert.id)}
+              disabled={isUpdating}
+              title="Ignorar"
+            >
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

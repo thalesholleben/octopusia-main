@@ -151,7 +151,10 @@ export const getAIAlerts = async (req: Request, res: Response) => {
     const userId = req.user!.id;
 
     const alerts = await prisma.aiAlert.findMany({
-      where: { userId },
+      where: {
+        userId,
+        status: null,
+      },
       orderBy: { updatedAt: 'desc' },
       take: 10, // Últimos 10 alertas
     });
@@ -571,9 +574,12 @@ export const getAlertsPage = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
 
-    // Últimos 30 alertas
+    // Últimos 30 alertas ativos (não concluídos ou ignorados)
     const alerts = await prisma.aiAlert.findMany({
-      where: { userId },
+      where: {
+        userId,
+        status: null,
+      },
       orderBy: { createdAt: 'desc' },
       take: 30,
     });
@@ -603,5 +609,53 @@ export const getAlertsPage = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[getAlertsPage] error:', error);
     res.status(500).json({ error: 'Erro ao buscar alertas' });
+  }
+};
+
+// Schema de validação para status de alerta
+const updateAlertStatusSchema = z.object({
+  status: z.enum(['concluido', 'ignorado'], {
+    errorMap: () => ({ message: 'Status inválido. Use "concluido" ou "ignorado".' })
+  }),
+});
+
+export const updateAlertStatus = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { status } = updateAlertStatusSchema.parse(req.body);
+
+    // Verificar se alerta existe e pertence ao usuário
+    const existingAlert = await prisma.aiAlert.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existingAlert) {
+      return res.status(404).json({ error: 'Alerta não encontrado' });
+    }
+
+    // Prevenir remarcar alertas já concluídos ou ignorados
+    if (existingAlert.status !== null) {
+      return res.status(400).json({
+        error: 'Alerta já foi marcado como concluído ou ignorado'
+      });
+    }
+
+    // Atualizar status do alerta
+    const updatedAlert = await prisma.aiAlert.update({
+      where: { id },
+      data: { status },
+    });
+
+    res.json({
+      message: `Alerta marcado como ${status}`,
+      alert: updatedAlert,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    console.error('[updateAlertStatus] error:', error);
+    res.status(500).json({ error: 'Erro ao atualizar status do alerta' });
   }
 };

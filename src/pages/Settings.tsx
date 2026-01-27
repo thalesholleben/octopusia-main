@@ -223,7 +223,7 @@ export default function Settings() {
           </p>
         </div>
 
-        <div className="grid gap-6 max-w-3xl">
+        <div className="grid gap-6 max-w-6xl lg:grid-cols-2">
           {/* Subscription Card */}
           <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '100ms', animationFillMode: 'forwards' }}>
             <CardHeader>
