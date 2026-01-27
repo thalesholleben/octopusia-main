@@ -58,9 +58,16 @@ export function AlertCard({ alert, onComplete, onIgnore, isUpdating }: AlertCard
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2">
           <Icon className={cn('w-4 h-4 mt-0.5 shrink-0', config.iconColor)} />
-          <p className="text-sm text-foreground leading-relaxed line-clamp-2">
-            {alert.aviso}
-          </p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-foreground leading-relaxed line-clamp-2">
+              {alert.aviso}
+            </p>
+            {alert.justificativa && (
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                {alert.justificativa}
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex items-center justify-between mt-2 ml-6">
           <p className="text-[10px] text-muted-foreground">

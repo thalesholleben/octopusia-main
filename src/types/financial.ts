@@ -15,7 +15,9 @@ export interface AIAlert {
   id: string;
   userId: string;
   aviso: string;
+  justificativa?: string;
   prioridade: 'baixa' | 'media' | 'alta';
+  status?: 'concluido' | 'ignorado' | null;
   createdAt: string;
   updatedAt: string;
 }
