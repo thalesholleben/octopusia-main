@@ -289,6 +289,13 @@ export const financeAPI = {
   // Balance Adjustment
   createBalanceAdjustment: (targetBalance: number) =>
     api.post<BalanceAdjustmentResponse>('/finance/balance-adjustment', { targetBalance }),
+
+  // Health Metrics
+  getHealthMetrics: () => api.get<HealthMetricsResponse>('/finance/health-metrics'),
+
+  // Seasonality
+  getSeasonality: (tipo: 'entrada' | 'saida') =>
+    api.get<SeasonalityResponse>('/finance/seasonality', { params: { tipo } }),
 };
 
 export const userAPI = {
@@ -329,6 +336,43 @@ export const userAPI = {
     notifyDashboard: boolean;
   }>('/user/notification-preferences', preferences),
 };
+
+// Health Metrics API Types
+export interface HealthMetricsResponse {
+  score: number;
+  scoreLabel: 'saudável' | 'atenção' | 'risco';
+  scoreColor: 'green' | 'yellow' | 'red';
+  trend?: {
+    direction: 'improving' | 'stable' | 'declining';
+    label: string;
+    color: string;
+  };
+  burnRate: {
+    current: number;
+    sixMonths: number;
+    hasLimitedData: boolean;
+  };
+  fixedCommitment: {
+    value: number;
+    status: 'saudável' | 'atenção' | 'risco';
+    hasLimitedData: boolean;
+  };
+  survivalTime: {
+    value: number;
+    unit: 'horas' | 'dias' | 'meses' | 'anos';
+    status: 'saudável' | 'atenção' | 'risco';
+    isStable: boolean;
+  };
+  saldoGlobal: number;
+}
+
+export interface SeasonalityResponse {
+  tipo: 'entrada' | 'saida';
+  maxValue: number;
+  minValue: number;
+  avgValue: number;
+  hasData: boolean;
+}
 
 // Goals API Types
 export interface FinancialGoal {

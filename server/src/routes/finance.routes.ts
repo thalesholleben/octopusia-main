@@ -16,6 +16,8 @@ import {
   deleteCustomCategory,
   getFinanceSummary,
   getExpenseDistribution,
+  getHealthMetrics,
+  getSeasonality,
 } from '../controllers/finance.controller';
 import { authenticateJWT } from '../middlewares/auth.middleware';
 
@@ -44,6 +46,12 @@ router.get('/summary', getFinanceSummary);
 
 // Expense distribution (for pie chart - excludes ajuste_saldo)
 router.get('/expense-distribution', getExpenseDistribution);
+
+// Health Metrics (burn rate, fixed commitment, survival time, score)
+router.get('/health-metrics', getHealthMetrics);
+
+// Seasonality (max/min/avg mensal últimos 12 meses)
+router.get('/seasonality', getSeasonality);
 
 // Other endpoints
 router.get('/alerts/page', getAlertsPage);

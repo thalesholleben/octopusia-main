@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wallet,
@@ -31,7 +31,7 @@ import { financeAPI } from '@/lib/api';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -66,36 +66,17 @@ const Index = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Calcular sazonalidade (mês com maior entrada/saída, menor entrada/saída e média)
-  // IMPORTANTE: useMemo deve ser chamado ANTES de qualquer return condicional
-  const sazonalidadeData = useMemo(() => {
-    if (records.length === 0) return null;
-
-    // Agrupar por mês
-    const monthlyTotals: Record<string, number> = {};
-
-    records.forEach(record => {
-      if (sazonalidadeShowEntradas && record.tipo !== 'entrada') return;
-      if (!sazonalidadeShowEntradas && record.tipo !== 'saida') return;
-
-      const date = new Date(record.dataComprovante);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-      if (!monthlyTotals[monthKey]) {
-        monthlyTotals[monthKey] = 0;
-      }
-      monthlyTotals[monthKey] += Number(record.valor);
-    });
-
-    const values = Object.values(monthlyTotals);
-    if (values.length === 0) return null;
-
-    const maxValue = Math.max(...values);
-    const minValue = Math.min(...values);
-    const avgValue = values.reduce((sum, val) => sum + val, 0) / values.length;
-
-    return { maxValue, minValue, avgValue };
-  }, [records, sazonalidadeShowEntradas]);
+  // Buscar sazonalidade do backend
+  const { data: sazonalidadeData } = useQuery({
+    queryKey: ['finance', 'seasonality', sazonalidadeShowEntradas ? 'entrada' : 'saida'],
+    queryFn: async () => {
+      const response = await financeAPI.getSeasonality(
+        sazonalidadeShowEntradas ? 'entrada' : 'saida'
+      );
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -116,8 +97,7 @@ const Index = () => {
       toast.success('Saldo ajustado com sucesso!');
       setBalanceDialogOpen(false);
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['financeSummary'] });
-      queryClient.invalidateQueries({ queryKey: ['finance-records-all-for-health'] });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
     } catch (error: any) {
       const message = error.response?.data?.message || error.response?.data?.error || 'Erro ao ajustar saldo';
       toast.error(message);
@@ -129,8 +109,8 @@ const Index = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ['financeRecords'] });
-      await queryClient.invalidateQueries({ queryKey: ['aiAlerts'] });
+      // ✅ refetch (não invalidate) - usuário clicou, quer ação AGORA
+      await queryClient.refetchQueries({ queryKey: ['finance'] });
       toast.success('Dados atualizados com sucesso!');
     } catch (error) {
       toast.error('Erro ao atualizar dados');

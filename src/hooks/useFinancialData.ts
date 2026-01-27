@@ -69,17 +69,23 @@ export const useFinancialData = (filters: FilterOptions) => {
     return { start, end };
   }, [filterType, startDate, endDate]);
 
+  // Serializar datas para strings (QueryKey estável)
+  const dateRangeStrings = useMemo(() => ({
+    start: format(dateRange.start, 'yyyy-MM-dd'),
+    end: format(dateRange.end, 'yyyy-MM-dd'),
+  }), [dateRange.start, dateRange.end]);
+
   // Buscar KPIs, registros e alertas do backend (tudo em uma única query)
   const {
     data: summaryData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['financeSummary', dateRange.start, dateRange.end],
+    queryKey: ['finance', 'summary', dateRangeStrings.start, dateRangeStrings.end],
     queryFn: () =>
       financeAPI.getSummary({
-        startDate: format(dateRange.start, 'yyyy-MM-dd'),
-        endDate: format(dateRange.end, 'yyyy-MM-dd'),
+        startDate: dateRangeStrings.start,
+        endDate: dateRangeStrings.end,
       }),
     staleTime: 1000 * 30, // 30 segundos - dados ficam frescos por pouco tempo
     refetchInterval: 1000 * 60, // Refetch automático a cada 1 minuto

@@ -681,3 +681,43 @@ export const updateAlertStatus = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao atualizar status do alerta' });
   }
 };
+
+/**
+ * GET /api/finance/health-metrics
+ * Retorna métricas de saúde financeira
+ */
+export const getHealthMetrics = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const metrics = await financeService.getHealthMetrics(userId);
+    res.json(metrics);
+  } catch (error) {
+    console.error('[getHealthMetrics] error:', error);
+    res.status(500).json({ error: 'Erro ao calcular métricas de saúde' });
+  }
+};
+
+/**
+ * GET /api/finance/seasonality?tipo=entrada|saida
+ * Retorna sazonalidade (max/min/avg mensal últimos 12 meses)
+ */
+const seasonalitySchema = z.object({
+  tipo: z.enum(['entrada', 'saida'], {
+    errorMap: () => ({ message: 'Tipo deve ser "entrada" ou "saida"' }),
+  }),
+});
+
+export const getSeasonality = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { tipo } = seasonalitySchema.parse(req.query);
+    const seasonality = await financeService.getSeasonality(userId, tipo);
+    res.json(seasonality);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    console.error('[getSeasonality] error:', error);
+    res.status(500).json({ error: 'Erro ao calcular sazonalidade' });
+  }
+};

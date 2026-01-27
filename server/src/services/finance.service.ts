@@ -426,4 +426,341 @@ export class FinanceService {
       variacaoSaidas,
     };
   }
+
+  /**
+   * Calcular métricas de saúde financeira
+   * SEMPRE retorna objeto completo (nunca undefined profundo)
+   */
+  async getHealthMetrics(userId: string) {
+    const now = new Date();
+    const twelveMonthsAgo = subMonths(now, 12);
+    const sixMonthsAgo = subMonths(now, 6);
+    const thirtyDaysAgo = subMonths(now, 1);
+
+    // Query 1: TODOS os registros (saldo global)
+    const allRecords = await this.prisma.financeRecord.findMany({
+      where: { userId },
+      orderBy: { dataComprovante: 'desc' },
+    });
+
+    // Query 2: Últimos 12 meses (burn rate + commitment)
+    const last12MonthsRecords = await this.prisma.financeRecord.findMany({
+      where: {
+        userId,
+        dataComprovante: { gte: twelveMonthsAgo, lte: now },
+      },
+      orderBy: { dataComprovante: 'desc' },
+    });
+
+    // ⚠️ CASO SEM DADOS: Retornar defaults explícitos (nunca undefined profundo)
+    if (allRecords.length === 0) {
+      return {
+        score: 0,
+        scoreLabel: 'atenção' as const,
+        scoreColor: 'yellow' as const,
+        burnRate: { current: 0, sixMonths: 0, hasLimitedData: true },
+        fixedCommitment: { value: 0, status: 'atenção' as const, hasLimitedData: true },
+        survivalTime: { value: 0, unit: 'dias' as const, status: 'atenção' as const, isStable: true },
+        saldoGlobal: 0,
+      };
+    }
+
+    // 1. SALDO GLOBAL (todos os registros)
+    const saldoGlobal = allRecords.reduce((acc, record) => {
+      const valor = Number(record.valor) || 0;
+      return record.tipo === 'entrada' ? acc + valor : acc - valor;
+    }, 0);
+
+    // 2. BURN RATE
+    const burnRateData = this.calculateBurnRate(last12MonthsRecords, now, twelveMonthsAgo, sixMonthsAgo);
+
+    // 3. COMPROMETIMENTO FIXO
+    const fixedCommitmentData = this.calculateFixedCommitment(last12MonthsRecords);
+
+    // 4. TEMPO DE SOBREVIVÊNCIA
+    const survivalTimeData = this.calculateSurvivalTime(saldoGlobal, burnRateData.current);
+
+    // 5. SCORE DE SAÚDE
+    const scoreData = this.calculateHealthScore(burnRateData, fixedCommitmentData, survivalTimeData);
+
+    // 6. TENDÊNCIA (opcional - só se dados suficientes)
+    const trend = this.calculateHealthTrend(allRecords, last12MonthsRecords, now, thirtyDaysAgo);
+
+    return {
+      score: scoreData.score,
+      scoreLabel: scoreData.label,
+      scoreColor: scoreData.color,
+      trend,
+      burnRate: burnRateData,
+      fixedCommitment: fixedCommitmentData,
+      survivalTime: survivalTimeData,
+      saldoGlobal,
+    };
+  }
+
+  /**
+   * Calcular sazonalidade (máx/mín/média mensal últimos 12 meses)
+   */
+  async getSeasonality(userId: string, tipo: 'entrada' | 'saida') {
+    const now = new Date();
+    const twelveMonthsAgo = subMonths(now, 12);
+
+    const records = await this.prisma.financeRecord.findMany({
+      where: {
+        userId,
+        tipo,
+        dataComprovante: { gte: twelveMonthsAgo, lte: now },
+      },
+    });
+
+    if (records.length === 0) {
+      return {
+        tipo,
+        maxValue: 0,
+        minValue: 0,
+        avgValue: 0,
+        hasData: false,
+      };
+    }
+
+    // Agrupar por mês (YYYY-MM)
+    const monthlyTotals: Record<string, number> = {};
+    records.forEach((record) => {
+      const date = record.dataComprovante;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + Number(record.valor);
+    });
+
+    const values = Object.values(monthlyTotals);
+    const maxValue = Math.max(...values);
+    const minValue = Math.min(...values);
+    const avgValue = values.reduce((sum, val) => sum + val, 0) / values.length;
+
+    return {
+      tipo,
+      maxValue,
+      minValue,
+      avgValue,
+      hasData: true,
+    };
+  }
+
+  // ===== HELPER METHODS (private) =====
+
+  private calculateBurnRate(
+    records: any[],
+    now: Date,
+    twelveMonthsAgo: Date,
+    sixMonthsAgo: Date
+  ) {
+    // Filtrar saídas dos últimos 12 meses
+    const last12MonthsExpenses = records.filter((r) => r.tipo === 'saida');
+
+    // Filtrar saídas dos últimos 6 meses
+    const last6MonthsExpenses = records.filter((r) => {
+      return r.tipo === 'saida' && r.dataComprovante >= sixMonthsAgo;
+    });
+
+    const totalExpenses12M = last12MonthsExpenses.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+    const totalExpenses6M = last6MonthsExpenses.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+    const current = totalExpenses12M / 12;
+    const sixMonths = totalExpenses6M / 6;
+
+    const hasLimitedData = last12MonthsExpenses.length < 3;
+
+    return {
+      current,
+      sixMonths,
+      hasLimitedData,
+    };
+  }
+
+  private calculateFixedCommitment(records: any[]) {
+    // Despesas fixas (classificacao = 'fixo')
+    const fixedExpenses = records
+      .filter((r) => r.tipo === 'saida' && r.classificacao === 'fixo')
+      .reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+    // Total de entradas
+    const totalIncome = records
+      .filter((r) => r.tipo === 'entrada')
+      .reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+    const value = totalIncome > 0 ? (fixedExpenses / totalIncome) * 100 : 0;
+
+    const status: 'saudável' | 'atenção' | 'risco' =
+      value <= 50 ? 'saudável' : value <= 70 ? 'atenção' : 'risco';
+
+    const hasLimitedData = records.filter((r) => r.tipo === 'entrada').length < 2;
+
+    return {
+      value,
+      status,
+      hasLimitedData,
+    };
+  }
+
+  private calculateSurvivalTime(saldoGlobal: number, burnRate: number) {
+    if (burnRate <= 0) {
+      // Burn rate zero ou negativo = situação estável
+      return {
+        value: 0,
+        unit: 'dias' as const,
+        status: 'atenção' as const,
+        isStable: true,
+      };
+    }
+
+    if (saldoGlobal <= 0) {
+      // Saldo negativo = risco
+      return {
+        value: 0,
+        unit: 'dias' as const,
+        status: 'risco' as const,
+        isStable: false,
+      };
+    }
+
+    // Meses de sobrevivência
+    const monthsOfSurvival = saldoGlobal / burnRate;
+
+    // Converter para unidade apropriada
+    let value: number;
+    let unit: 'horas' | 'dias' | 'meses' | 'anos';
+
+    if (monthsOfSurvival < 0.1) {
+      value = monthsOfSurvival * 30 * 24; // horas
+      unit = 'horas';
+    } else if (monthsOfSurvival < 1) {
+      value = monthsOfSurvival * 30; // dias
+      unit = 'dias';
+    } else if (monthsOfSurvival < 24) {
+      value = monthsOfSurvival; // meses
+      unit = 'meses';
+    } else {
+      value = monthsOfSurvival / 12; // anos
+      unit = 'anos';
+    }
+
+    const status: 'saudável' | 'atenção' | 'risco' =
+      monthsOfSurvival >= 6 ? 'saudável' : monthsOfSurvival >= 3 ? 'atenção' : 'risco';
+
+    return {
+      value: Math.round(value * 10) / 10, // 1 casa decimal
+      unit,
+      status,
+      isStable: true,
+    };
+  }
+
+  private calculateHealthScore(
+    burnRateData: any,
+    fixedCommitmentData: any,
+    survivalTimeData: any
+  ) {
+    // Score Burn Rate (30%) - usando faixas (não linear)
+    const burnRateRatio = fixedCommitmentData.value;
+    const burnRateScore =
+      burnRateRatio === null || burnRateRatio === 0
+        ? 50
+        : burnRateRatio <= 30
+          ? 100
+          : burnRateRatio <= 50
+            ? 80
+            : burnRateRatio <= 70
+              ? 60
+              : burnRateRatio <= 90
+                ? 40
+                : burnRateRatio <= 110
+                  ? 25
+                  : 10;
+
+    // Score Comprometimento Fixo (40%)
+    const fixedScore = fixedCommitmentData.value <= 50 ? 100 : 100 - (fixedCommitmentData.value - 50) * 2;
+
+    // Score Tempo de Sobrevivência (30%)
+    const survivalMonths = survivalTimeData.isStable
+      ? survivalTimeData.unit === 'anos'
+        ? survivalTimeData.value * 12
+        : survivalTimeData.unit === 'meses'
+          ? survivalTimeData.value
+          : survivalTimeData.unit === 'dias'
+            ? survivalTimeData.value / 30
+            : survivalTimeData.value / (30 * 24)
+      : 0;
+
+    const survivalScore =
+      survivalMonths >= 12 ? 100 : survivalMonths >= 6 ? 80 : survivalMonths >= 3 ? 50 : survivalMonths >= 1 ? 30 : 10;
+
+    // Score total (ponderado)
+    const totalScore = burnRateScore * 0.3 + fixedScore * 0.4 + survivalScore * 0.3;
+
+    // Normalizar (0-100)
+    const normalizedScore = Math.max(0, Math.min(100, Math.round(totalScore)));
+
+    const label: 'saudável' | 'atenção' | 'risco' =
+      normalizedScore >= 70 ? 'saudável' : normalizedScore >= 50 ? 'atenção' : 'risco';
+
+    const color: 'green' | 'yellow' | 'red' =
+      normalizedScore >= 70 ? 'green' : normalizedScore >= 50 ? 'yellow' : 'red';
+
+    return {
+      score: normalizedScore,
+      label,
+      color,
+    };
+  }
+
+  private calculateHealthTrend(
+    allRecords: any[],
+    last12MonthsRecords: any[],
+    now: Date,
+    thirtyDaysAgo: Date
+  ) {
+    // Filtrar registros até 30 dias atrás
+    const recordsUntil30DaysAgo = allRecords.filter((r) => r.dataComprovante <= thirtyDaysAgo);
+    const last12MonthsUntil30DaysAgo = last12MonthsRecords.filter((r) => r.dataComprovante <= thirtyDaysAgo);
+
+    // Se não houver dados suficientes, não mostrar tendência
+    if (recordsUntil30DaysAgo.length < 5 || last12MonthsUntil30DaysAgo.length < 5) {
+      return undefined;
+    }
+
+    // Calcular scores
+    const scoreOld = this.calculateScoreOnly(recordsUntil30DaysAgo, last12MonthsUntil30DaysAgo, thirtyDaysAgo);
+    const scoreCurrent = this.calculateScoreOnly(allRecords, last12MonthsRecords, now);
+
+    const scoreDiff = scoreCurrent - scoreOld;
+
+    const direction: 'improving' | 'stable' | 'declining' =
+      scoreDiff >= 5 ? 'improving' : scoreDiff <= -5 ? 'declining' : 'stable';
+
+    const label = direction === 'improving' ? 'Em melhora' : direction === 'stable' ? 'Estável' : 'Em queda';
+
+    const color = direction === 'improving' ? 'green' : direction === 'stable' ? 'yellow' : 'red';
+
+    return {
+      direction,
+      label,
+      color,
+    };
+  }
+
+  private calculateScoreOnly(allRecords: any[], last12MonthsRecords: any[], referenceDate: Date): number {
+    const twelveMonthsAgo = subMonths(referenceDate, 12);
+    const sixMonthsAgo = subMonths(referenceDate, 6);
+
+    const saldoGlobal = allRecords.reduce((acc, record) => {
+      const valor = Number(record.valor) || 0;
+      return record.tipo === 'entrada' ? acc + valor : acc - valor;
+    }, 0);
+
+    const burnRateData = this.calculateBurnRate(last12MonthsRecords, referenceDate, twelveMonthsAgo, sixMonthsAgo);
+    const fixedCommitmentData = this.calculateFixedCommitment(last12MonthsRecords);
+    const survivalTimeData = this.calculateSurvivalTime(saldoGlobal, burnRateData.current);
+    const scoreData = this.calculateHealthScore(burnRateData, fixedCommitmentData, survivalTimeData);
+
+    return scoreData.score;
+  }
 }

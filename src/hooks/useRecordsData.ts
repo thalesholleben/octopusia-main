@@ -17,6 +17,17 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
   const queryClient = useQueryClient();
   const { page = 1, limit = 50 } = filters;
 
+  // Serializar queryKey (estável)
+  const queryKey = useMemo(() => {
+    const parts: (string | number)[] = ['finance', 'records'];
+    if (filters.startDate) parts.push(format(filters.startDate, 'yyyy-MM-dd'));
+    if (filters.endDate) parts.push(format(filters.endDate, 'yyyy-MM-dd'));
+    if (filters.tipo) parts.push(filters.tipo);
+    if (filters.categoria) parts.push(filters.categoria);
+    parts.push(page, limit);
+    return parts;
+  }, [filters.startDate, filters.endDate, filters.tipo, filters.categoria, page, limit]);
+
   // Fetch records
   const {
     data: recordsData,
@@ -24,7 +35,7 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
     error: recordsError,
     isFetching,
   } = useQuery({
-    queryKey: ['records', filters],
+    queryKey,
     queryFn: () => financeAPI.getRecords({
       startDate: filters.startDate ? format(filters.startDate, 'yyyy-MM-dd') : undefined,
       endDate: filters.endDate ? format(filters.endDate, 'yyyy-MM-dd') : undefined,
@@ -53,8 +64,7 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
   const createMutation = useMutation({
     mutationFn: financeAPI.createRecord,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['records'] });
-      queryClient.invalidateQueries({ queryKey: ['financeRecords'] });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
       toast.success('Registro criado com sucesso!');
     },
     onError: (error: any) => {
@@ -67,8 +77,7 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof financeAPI.updateRecord>[1] }) =>
       financeAPI.updateRecord(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['records'] });
-      queryClient.invalidateQueries({ queryKey: ['financeRecords'] });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
       toast.success('Registro atualizado com sucesso!');
     },
     onError: (error: any) => {
@@ -80,8 +89,7 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
   const deleteMutation = useMutation({
     mutationFn: financeAPI.deleteRecord,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['records'] });
-      queryClient.invalidateQueries({ queryKey: ['financeRecords'] });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
       toast.success('Registro excluído com sucesso!');
     },
     onError: (error: any) => {
