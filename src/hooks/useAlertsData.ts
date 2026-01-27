@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tantml:function_calls>';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { financeAPI, AlertsPageResponse } from '@/lib/api';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
