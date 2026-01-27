@@ -265,16 +265,16 @@ const Index = () => {
             <div className="col-span-1">
               <KPICard
                 title="Variação Gastos"
-                value={kpis.variacaoSaidas >= 0
-                  ? `+${formatCurrency(kpis.variacaoSaidas)}`
-                  : formatCurrency(kpis.variacaoSaidas)
+                value={kpis.variacaoMensalReais >= 0
+                  ? `+${formatCurrency(kpis.variacaoMensalReais)}`
+                  : formatCurrency(kpis.variacaoMensalReais)
                 }
                 trend={{
                   value: kpis.variacaoSaidas,
                   label: 'vs mês anterior'
                 }}
                 icon={<BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />}
-                variant={kpis.variacaoSaidas <= 0 ? 'positive' : 'negative'}
+                variant={kpis.variacaoMensalReais <= 0 ? 'positive' : 'negative'}
                 invertTrendColors={true}
                 delay={300}
               />
