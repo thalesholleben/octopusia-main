@@ -14,6 +14,7 @@ interface KPICardProps {
   variant?: 'default' | 'positive' | 'negative' | 'warning';
   delay?: number;
   noIconBg?: boolean;
+  invertTrendColors?: boolean;
 }
 
 export function KPICard({
@@ -24,7 +25,8 @@ export function KPICard({
   icon,
   variant = 'default',
   delay = 0,
-  noIconBg = false
+  noIconBg = false,
+  invertTrendColors = false
 }: KPICardProps) {
   const getTrendIcon = () => {
     if (!trend) return null;
@@ -35,8 +37,13 @@ export function KPICard({
 
   const getTrendClass = () => {
     if (!trend) return '';
-    if (trend.value > 0) return 'trend-up';
-    if (trend.value < 0) return 'trend-down';
+    if (invertTrendColors) {
+      if (trend.value > 0) return 'trend-up-inverted';
+      if (trend.value < 0) return 'trend-down-inverted';
+    } else {
+      if (trend.value > 0) return 'trend-up';
+      if (trend.value < 0) return 'trend-down';
+    }
     return 'trend-neutral';
   };
 

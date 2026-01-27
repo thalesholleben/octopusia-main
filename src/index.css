@@ -128,6 +128,15 @@
     @apply text-[hsl(var(--warning))] flex items-center gap-1;
   }
 
+  /* Inverted trend indicators (for expense variations) */
+  .trend-up-inverted {
+    @apply text-[hsl(var(--destructive))] flex items-center gap-1;
+  }
+
+  .trend-down-inverted {
+    @apply text-[hsl(var(--success))] flex items-center gap-1;
+  }
+
   /* Priority borders for AI alerts */
   .priority-low {
     @apply border-l-4 border-l-[hsl(var(--success))];

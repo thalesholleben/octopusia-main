@@ -217,10 +217,10 @@ const Index = () => {
               />
             </div>
 
-            {/* 2. Total de Entradas (50% mobile, 33% desktop) */}
+            {/* 2. Total Entradas (50% mobile, 33% desktop) */}
             <div className="col-span-1">
               <KPICard
-                title="Total de Entradas"
+                title="Total Entradas"
                 value={formatCurrency(kpis.entradas)}
                 trend={{
                   value: kpis.variacaoMensal,
@@ -232,10 +232,10 @@ const Index = () => {
               />
             </div>
 
-            {/* 3. Total de Saídas (50% mobile, 33% desktop) */}
+            {/* 3. Total Saídas (50% mobile, 33% desktop) */}
             <div className="col-span-1">
               <KPICard
-                title="Total de Saídas"
+                title="Total Saídas"
                 value={formatCurrency(Math.abs(kpis.saidas))}
                 trend={{
                   value: -kpis.variacaoSaidas,
@@ -261,20 +261,21 @@ const Index = () => {
               />
             </div>
 
-            {/* 5. Variação Mensal (50% mobile, 33% desktop) */}
+            {/* 5. Variação Gastos (50% mobile, 33% desktop) */}
             <div className="col-span-1">
               <KPICard
-                title="Variação Mensal"
-                value={kpis.variacaoMensalReais >= 0
-                  ? `+${formatCurrency(kpis.variacaoMensalReais)}`
-                  : formatCurrency(kpis.variacaoMensalReais)
+                title="Variação Gastos"
+                value={kpis.variacaoSaidas >= 0
+                  ? `+${formatCurrency(kpis.variacaoSaidas)}`
+                  : formatCurrency(kpis.variacaoSaidas)
                 }
                 trend={{
-                  value: kpis.variacaoMensal,
+                  value: kpis.variacaoSaidas,
                   label: 'vs mês anterior'
                 }}
                 icon={<BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />}
-                variant={kpis.variacaoMensal <= 0 ? 'positive' : 'negative'}
+                variant={kpis.variacaoSaidas <= 0 ? 'positive' : 'negative'}
+                invertTrendColors={true}
                 delay={300}
               />
             </div>
