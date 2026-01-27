@@ -116,9 +116,9 @@ export const useFinancialData = (filters: FilterOptions) => {
 
   // Dados para gráficos
   const chartData = useMemo(() => {
-    // Agrupar por categoria para o gráfico de pizza
+    // Agrupar por categoria para o gráfico de pizza (excluindo ajustes de saldo)
     const categoryCounts = filteredRecords
-      .filter((r) => r.tipo === 'saida')
+      .filter((r) => r.tipo === 'saida' && r.classificacao !== 'ajuste_saldo')
       .reduce((acc, r) => {
         acc[r.categoria] = (acc[r.categoria] || 0) + Number(r.valor);
         return acc;

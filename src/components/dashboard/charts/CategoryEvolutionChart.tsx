@@ -55,8 +55,8 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
   const topCategories = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
 
-    // Filtra apenas saídas e calcula totais
-    data.filter(record => record.tipo === 'saida').forEach(record => {
+    // Filtra apenas saídas (excluindo ajustes de saldo) e calcula totais
+    data.filter(record => record.tipo === 'saida' && record.classificacao !== 'ajuste_saldo').forEach(record => {
       const valor = Number(record.valor);
       categoryTotals[record.categoria] = (categoryTotals[record.categoria] || 0) + valor;
     });
@@ -69,8 +69,8 @@ export function CategoryEvolutionChart({ data }: CategoryEvolutionChartProps) {
 
   // Agrupa dados por granularidade dinâmica (apenas saídas)
   const chartData = useMemo(() => {
-    // Filtra apenas saídas
-    const saidasData = data.filter(record => record.tipo === 'saida');
+    // Filtra apenas saídas (excluindo ajustes de saldo)
+    const saidasData = data.filter(record => record.tipo === 'saida' && record.classificacao !== 'ajuste_saldo');
 
     // Agrupa por período
     const groupedData: Record<string, Record<string, number>> = {};

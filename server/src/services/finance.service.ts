@@ -245,8 +245,8 @@ export class FinanceService {
         categoria: 'Ajuste de Saldo',
         classificacao: 'ajuste_saldo',
         dataComprovante: new Date(), // Prisma stores as @db.Date (date only)
-        de: tipo === 'entrada' ? 'Ajuste Manual' : undefined,
-        para: tipo === 'saida' ? 'Ajuste Manual' : undefined,
+        de: 'Ajuste Manual',
+        para: 'Ajuste Manual',
       },
     });
 

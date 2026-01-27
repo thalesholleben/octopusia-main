@@ -14,8 +14,8 @@ const COLORS = [
 ];
 
 export function CategoryRankingChart({ data }: CategoryRankingChartProps) {
-  const expenses = data.filter(r => r.tipo === 'saida');
-  
+  const expenses = data.filter(r => r.tipo === 'saida' && r.classificacao !== 'ajuste_saldo');
+
   const categoryTotals = expenses.reduce((acc, record) => {
     acc[record.categoria] = (acc[record.categoria] || 0) + Number(record.valor);
     return acc;
