@@ -160,6 +160,17 @@ export interface PaginatedRecordsResponse {
   pagination: PaginationMeta;
 }
 
+export interface BalanceAdjustmentResponse {
+  message: string;
+  record: FinanceRecord;
+  adjustment: {
+    previousBalance: number;
+    targetBalance: number;
+    difference: number;
+    tipo: 'entrada' | 'saida';
+  };
+}
+
 // Funções de API
 export const authAPI = {
   login: (email: string, password: string) =>
@@ -253,6 +264,10 @@ export const financeAPI = {
 
   deleteCustomCategory: (id: string) =>
     api.delete<{ message: string }>(`/finance/categories/${id}`),
+
+  // Balance Adjustment
+  createBalanceAdjustment: (targetBalance: number) =>
+    api.post<BalanceAdjustmentResponse>('/finance/balance-adjustment', { targetBalance }),
 };
 
 export const userAPI = {

@@ -57,6 +57,11 @@ const customCategorySchema = z.object({
   }),
 });
 
+// Schema de validação para ajuste de saldo
+const balanceAdjustmentSchema = z.object({
+  targetBalance: z.number({ required_error: 'Saldo desejado é obrigatório' }),
+});
+
 // Categorias padrão
 const DEFAULT_EXPENSE_CATEGORIES = [
   'Aluguel', 'Contas Fixas', 'Alimentação', 'FastFood', 'Transporte',
@@ -373,6 +378,36 @@ export const deleteFinanceRecord = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Delete finance record error:', error);
     res.status(500).json({ error: 'Erro ao excluir registro' });
+  }
+};
+
+export const createBalanceAdjustment = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { targetBalance } = balanceAdjustmentSchema.parse(req.body);
+
+    const financeService = new FinanceService(prisma);
+    const result = await financeService.adjustBalance(userId, targetBalance);
+
+    res.status(201).json(result);
+  } catch (error: any) {
+    // Handle service-thrown errors with status
+    if (error.status) {
+      return res.status(error.status).json({
+        error: error.error,
+        message: error.message,
+        limit: error.limit,
+        current: error.current,
+      });
+    }
+
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+
+    console.error('Balance adjustment error:', error);
+    res.status(500).json({ error: 'Erro ao ajustar saldo' });
   }
 };
 

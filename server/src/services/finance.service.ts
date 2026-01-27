@@ -185,6 +185,84 @@ export class FinanceService {
   }
 
   /**
+   * Ajusta o saldo criando um registro financeiro com a diferença
+   * Limite: 3 ajustes por mês
+   */
+  async adjustBalance(userId: string, targetBalance: number) {
+    // 1. Check monthly limit (max 3 per month)
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+
+    const adjustmentCount = await this.prisma.financeRecord.count({
+      where: {
+        userId,
+        classificacao: 'ajuste_saldo',
+        dataComprovante: { gte: monthStart, lte: monthEnd },
+      },
+    });
+
+    if (adjustmentCount >= 3) {
+      throw {
+        status: 403,
+        error: 'LIMITE_AJUSTE_ATINGIDO',
+        message: 'Você já realizou 3 ajustes de saldo este mês. Muitos ajustes podem distorcer seus gráficos. O limite será liberado no próximo mês.',
+        limit: 3,
+        current: adjustmentCount,
+      };
+    }
+
+    // 2. Calculate GLOBAL balance (all records, no filters)
+    const allRecords = await this.prisma.financeRecord.findMany({
+      where: { userId },
+    });
+
+    const currentBalance = allRecords.reduce((acc, record) => {
+      const valor = Number(record.valor) || 0;
+      return record.tipo === 'entrada' ? acc + valor : acc - valor;
+    }, 0);
+
+    // 3. Calculate difference
+    const difference = targetBalance - currentBalance;
+
+    if (Math.abs(difference) < 0.01) {
+      throw {
+        status: 400,
+        error: 'Nenhum ajuste necessário',
+        message: 'O saldo atual já está correto.',
+      };
+    }
+
+    // 4. Create adjustment record
+    const tipo = difference > 0 ? 'entrada' : 'saida';
+    const valor = Math.abs(difference);
+
+    const record = await this.prisma.financeRecord.create({
+      data: {
+        userId,
+        valor,
+        tipo,
+        categoria: 'Ajuste de Saldo',
+        classificacao: 'ajuste_saldo',
+        dataComprovante: new Date(), // Prisma stores as @db.Date (date only)
+        de: tipo === 'entrada' ? 'Ajuste Manual' : undefined,
+        para: tipo === 'saida' ? 'Ajuste Manual' : undefined,
+      },
+    });
+
+    return {
+      message: 'Saldo ajustado com sucesso',
+      record,
+      adjustment: {
+        previousBalance: currentBalance,
+        targetBalance,
+        difference,
+        tipo,
+      },
+    };
+  }
+
+  /**
    * Calcular média mensal dos últimos 6 meses
    * SEMPRE usa últimos 6 meses, independente dos filtros do usuário
    */

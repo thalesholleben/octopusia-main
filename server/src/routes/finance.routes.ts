@@ -4,6 +4,7 @@ import {
   createFinanceRecord,
   updateFinanceRecord,
   deleteFinanceRecord,
+  createBalanceAdjustment,
   getAIAlerts,
   getAlertsPage,
   getStatistics,
@@ -26,6 +27,9 @@ router.get('/records', getFinanceRecords);
 router.post('/records', createFinanceRecord);
 router.put('/records/:id', updateFinanceRecord);
 router.delete('/records/:id', deleteFinanceRecord);
+
+// Balance Adjustment
+router.post('/balance-adjustment', createBalanceAdjustment);
 
 // Categories
 router.get('/categories', getCategories);

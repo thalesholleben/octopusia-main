@@ -15,6 +15,8 @@ interface KPICardProps {
   delay?: number;
   noIconBg?: boolean;
   invertTrendColors?: boolean;
+  actionIcon?: ReactNode;
+  onActionClick?: () => void;
 }
 
 export function KPICard({
@@ -26,7 +28,9 @@ export function KPICard({
   variant = 'default',
   delay = 0,
   noIconBg = false,
-  invertTrendColors = false
+  invertTrendColors = false,
+  actionIcon,
+  onActionClick,
 }: KPICardProps) {
   const getTrendIcon = () => {
     if (!trend) return null;
@@ -106,8 +110,19 @@ export function KPICard({
             </div>
           )}
         </div>
-        <div className={cn('p-1.5 sm:p-2 rounded-lg shrink-0', !noIconBg && getIconBg())}>
-          {icon}
+        <div className="flex items-center gap-1.5">
+          {actionIcon && onActionClick && (
+            <button
+              onClick={onActionClick}
+              className="p-1 rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground opacity-60 hover:opacity-100"
+              aria-label={`Ajustar ${title}`}
+            >
+              {actionIcon}
+            </button>
+          )}
+          <div className={cn('p-1.5 sm:p-2 rounded-lg shrink-0', !noIconBg && getIconBg())}>
+            {icon}
+          </div>
         </div>
       </div>
     </div>

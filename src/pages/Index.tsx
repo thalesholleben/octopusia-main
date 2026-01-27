@@ -8,7 +8,8 @@ import {
   BarChart3,
   AlertTriangle,
   DollarSign,
-  Percent
+  Percent,
+  Settings2
 } from 'lucide-react';
 import { Header } from '@/components/dashboard/Header';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -21,10 +22,12 @@ import { CategoryRankingChart } from '@/components/dashboard/charts/CategoryRank
 import { CategoryEvolutionChart } from '@/components/dashboard/charts/CategoryEvolutionChart';
 import { FinancialHealthCard } from '@/components/dashboard/FinancialHealthCard';
 import { WhatsAppPromoCard } from '@/components/dashboard/WhatsAppPromoCard';
+import { BalanceAdjustmentDialog } from '@/components/dashboard/BalanceAdjustmentDialog';
 import { useFinancialData } from '@/hooks/useFinancialData';
 import { useHealthMetrics } from '@/hooks/useHealthMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { DateFilterType } from '@/types/financial';
+import { financeAPI } from '@/lib/api';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -43,6 +46,8 @@ const Index = () => {
   }>({ type: 'last30days' });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [sazonalidadeShowEntradas, setSazonalidadeShowEntradas] = useState(true);
+  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
+  const [isAdjusting, setIsAdjusting] = useState(false);
 
   // Buscar dados financeiros
   const { records, alerts, kpis, chartData, isLoading, error } = useFinancialData({
@@ -102,6 +107,23 @@ const Index = () => {
   const handleSignOut = async () => {
     signOut();
     navigate('/auth');
+  };
+
+  const handleBalanceAdjustment = async (targetBalance: number) => {
+    setIsAdjusting(true);
+    try {
+      await financeAPI.createBalanceAdjustment(targetBalance);
+      toast.success('Saldo ajustado com sucesso!');
+      setBalanceDialogOpen(false);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['financeSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['finance-records-all-for-health'] });
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.response?.data?.error || 'Erro ao ajustar saldo';
+      toast.error(message);
+    } finally {
+      setIsAdjusting(false);
+    }
   };
 
   const handleRefresh = async () => {
@@ -214,6 +236,8 @@ const Index = () => {
                 icon={<Wallet className="w-4 h-4 sm:w-5 sm:h-5" />}
                 variant={kpis.lucroLiquido >= 0 ? 'positive' : 'negative'}
                 delay={100}
+                actionIcon={<Settings2 className="w-3 h-3" />}
+                onActionClick={() => setBalanceDialogOpen(true)}
               />
             </div>
 
@@ -330,6 +354,15 @@ const Index = () => {
           <CategoryEvolutionChart data={records} />
         </div>
       </main>
+
+      {/* Balance Adjustment Dialog */}
+      <BalanceAdjustmentDialog
+        open={balanceDialogOpen}
+        onOpenChange={setBalanceDialogOpen}
+        currentBalance={kpis.lucroLiquido}
+        onSubmit={handleBalanceAdjustment}
+        isLoading={isAdjusting}
+      />
     </div>
   );
 };
