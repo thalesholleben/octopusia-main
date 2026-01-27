@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface AIAlertsCardProps {
   alerts: AIAlert[];
@@ -34,6 +35,7 @@ const priorityConfig = {
 };
 
 export function AIAlertsCard({ alerts }: AIAlertsCardProps) {
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -125,8 +127,9 @@ export function AIAlertsCard({ alerts }: AIAlertsCardProps) {
             return (
               <div
                 key={alert.id}
+                onClick={() => navigate('/alerts')}
                 className={cn(
-                  'flex-shrink-0 w-[300px] sm:w-[280px] md:w-[calc(33.333%-8px)] min-w-[300px] sm:min-w-[280px] md:min-w-0 p-2.5 sm:p-3 rounded-lg border border-border transition-all hover:border-primary/30',
+                  'flex-shrink-0 w-[300px] sm:w-[280px] md:w-[calc(33.333%-8px)] min-w-[300px] sm:min-w-[280px] md:min-w-0 p-2.5 sm:p-3 rounded-lg border border-border transition-all hover:border-primary/30 cursor-pointer',
                   config.class,
                   config.bgClass
                 )}
@@ -140,7 +143,7 @@ export function AIAlertsCard({ alerts }: AIAlertsCardProps) {
                     alert.prioridade === 'alta' && 'text-destructive'
                   )} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] sm:text-xs text-foreground leading-relaxed line-clamp-2">
+                    <p className="text-xs sm:text-sm text-foreground leading-relaxed line-clamp-4">
                       {alert.aviso}
                     </p>
                     <div className="flex items-center gap-2 mt-1.5 sm:mt-2">
