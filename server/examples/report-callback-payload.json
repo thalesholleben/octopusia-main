@@ -1,0 +1,130 @@
+{
+  "_comment": "Exemplo de payload que o n8n deve enviar de volta após gerar o relatório",
+  "_endpoint": "POST /api/internal/reports/callback",
+  "_headers": {
+    "Content-Type": "application/json",
+    "X-Internal-Key": "sua-chave-configurada-no-env"
+  },
+
+  "_examples": [
+    {
+      "_scenario": "Relatório gerado e enviado com sucesso",
+      "reportId": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "sent",
+      "content": "<!DOCTYPE html><html><head><style>body { font-family: Arial, sans-serif; } .header { background: #1a73e8; color: white; padding: 20px; } .metric { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 8px; } .positive { color: #10b981; } .negative { color: #ef4444; }</style></head><body><div class='header'><h1>Relatório Financeiro - Janeiro 2024</h1><p>Gerado para: João Silva</p></div><div class='content'><h2>Resumo Executivo</h2><p>Seu mês de janeiro apresentou resultados saudáveis...</p><div class='metric'><h3>Entradas</h3><p class='positive'>R$ 50.000,00</p></div><div class='metric'><h3>Saídas</h3><p>R$ 34.249,50</p></div><div class='metric'><h3>Saldo</h3><p class='positive'>R$ 15.750,50</p></div></div></body></html>"
+    },
+    {
+      "_scenario": "Erro na geração do relatório (IA falhou)",
+      "reportId": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "failed",
+      "errorMessage": "OpenAI API rate limit exceeded"
+    },
+    {
+      "_scenario": "Erro no envio do email",
+      "reportId": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "failed",
+      "errorMessage": "SMTP connection timeout"
+    },
+    {
+      "_scenario": "Dados inválidos do webhook",
+      "reportId": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "failed",
+      "errorMessage": "Invalid KPIs data structure"
+    }
+  ],
+
+  "_validation": {
+    "reportId": {
+      "type": "string",
+      "format": "uuid",
+      "required": true,
+      "description": "ID do relatório (recebido no webhook trigger)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["sent", "failed"],
+      "required": true,
+      "description": "Status final do relatório"
+    },
+    "content": {
+      "type": "string",
+      "required": false,
+      "description": "HTML do relatório (obrigatório apenas se status = 'sent')"
+    },
+    "errorMessage": {
+      "type": "string",
+      "required": false,
+      "description": "Mensagem de erro (obrigatório apenas se status = 'failed')"
+    }
+  },
+
+  "_n8n_node_config": {
+    "method": "POST",
+    "url": "={{$env.BACKEND_URL}}/api/internal/reports/callback",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Internal-Key": "={{$env.INTERNAL_API_KEY}}"
+    },
+    "body": {
+      "reportId": "={{$json.reportId}}",
+      "status": "sent",
+      "content": "={{$json.aiGeneratedHtml}}"
+    },
+    "options": {
+      "timeout": 30000,
+      "retry": {
+        "maxRetries": 3,
+        "retryOnHttpStatusCodes": [500, 502, 503, 504],
+        "waitBetween": 10000
+      }
+    }
+  },
+
+  "_response_examples": [
+    {
+      "_scenario": "Callback aceito com sucesso",
+      "status": 200,
+      "body": {
+        "success": true,
+        "report": {
+          "id": "550e8400-e29b-41d4-a716-446655440000",
+          "userId": "123e4567-e89b-12d3-a456-426614174000",
+          "status": "sent",
+          "type": "advanced",
+          "content": "<!DOCTYPE html>...",
+          "requestedAt": "2024-01-28T10:30:00.000Z",
+          "generatedAt": "2024-01-28T10:35:00.000Z",
+          "sentAt": "2024-01-28T10:35:00.000Z",
+          "countsForLimit": true,
+          "errorMessage": null,
+          "filterStartDate": "2024-01-01",
+          "filterEndDate": "2024-01-31"
+        }
+      }
+    },
+    {
+      "_scenario": "Erro de autenticação (chave inválida)",
+      "status": 401,
+      "body": {
+        "error": "Chave de autenticação inválida"
+      }
+    },
+    {
+      "_scenario": "Erro de validação (campo faltando)",
+      "status": 400,
+      "body": {
+        "error": "reportId deve ser um UUID válido"
+      }
+    },
+    {
+      "_scenario": "Relatório não encontrado",
+      "status": 500,
+      "body": {
+        "error": "Erro ao atualizar status do relatório",
+        "details": "Relatório não encontrado"
+      }
+    }
+  ],
+
+  "_curl_test": "curl -X POST https://seu-backend.com/api/internal/reports/callback \\\n  -H 'Content-Type: application/json' \\\n  -H 'X-Internal-Key: sua-chave-aqui' \\\n  -d '{\n    \"reportId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"status\": \"sent\",\n    \"content\": \"<html>...</html>\"\n  }'"
+}

@@ -1,0 +1,35 @@
+{
+  "_comment": "Exemplo de payload enviado pelo backend para o webhook n8n",
+  "_usage": "Use este JSON para testar seu workflow n8n manualmente",
+
+  "reportId": "550e8400-e29b-41d4-a716-446655440000",
+  "userId": "123e4567-e89b-12d3-a456-426614174000",
+  "userEmail": "usuario@exemplo.com",
+  "displayName": "João Silva",
+  "reportType": "advanced",
+  "timestamp": "2024-01-28T10:30:00.000Z",
+
+  "filters": {
+    "startDate": "2024-01-01",
+    "endDate": "2024-01-31"
+  },
+
+  "summary": {
+    "kpis": {
+      "saldo": 15750.50,
+      "entradas": 50000.00,
+      "saidas": 34249.50,
+      "lucroLiquido": 15750.50,
+      "margemLiquida": 31.50,
+      "ticketMedio": 1250.75,
+      "mediaMensal": 10500.00,
+      "totalTransacoes": 42
+    },
+    "healthMetrics": {
+      "score": 85,
+      "burnRate": 8500.00,
+      "fixedCommitment": 45.5,
+      "survivalTime": 1.85
+    }
+  }
+}

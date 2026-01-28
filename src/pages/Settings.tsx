@@ -329,7 +329,18 @@ export default function Settings() {
           </Card>
 
           {/* Generate Report Card */}
-          <GenerateReportCard />
+          <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                <CardTitle>Gerar Relatório</CardTitle>
+              </div>
+              <CardDescription>Solicite um relatório financeiro detalhado por email</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GenerateReportCard />
+            </CardContent>
+          </Card>
 
           {/* Security Card - Change Password */}
           <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
