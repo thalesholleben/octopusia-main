@@ -21,6 +21,12 @@ const updateNotificationPreferencesSchema = z.object({
   notifyDashboard: z.boolean(),
 });
 
+const updateTemperamentSchema = z.object({
+  temperament: z.enum(['neutro', 'direto', 'motivador', 'sarcastico', 'temperamental'], {
+    errorMap: () => ({ message: 'Temperamento inválido' })
+  })
+});
+
 // Buscar configurações do usuário logado
 export const getSettings = async (req: Request, res: Response) => {
   try {
@@ -39,6 +45,7 @@ export const getSettings = async (req: Request, res: Response) => {
         notifyEmail: true,
         notifyChat: true,
         notifyDashboard: true,
+        temperament: true,
       }
     });
 
@@ -241,5 +248,32 @@ export const updateNotificationPreferences = async (req: Request, res: Response)
     }
     console.error('Erro ao atualizar preferências de notificação:', error);
     res.status(500).json({ error: 'Erro ao atualizar preferências de notificação' });
+  }
+};
+
+// Atualizar temperamento da IA
+export const updateTemperament = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const { temperament } = updateTemperamentSchema.parse(req.body);
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { temperament },
+      select: { temperament: true }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0].message });
+    }
+    console.error('Erro ao atualizar temperamento:', error);
+    res.status(500).json({ error: 'Erro ao atualizar temperamento' });
   }
 };

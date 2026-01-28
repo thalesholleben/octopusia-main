@@ -5,7 +5,8 @@ import {
   changePassword,
   getChatInfo,
   unlinkChat,
-  updateNotificationPreferences
+  updateNotificationPreferences,
+  updateTemperament
 } from '../controllers/user.controller';
 import {
   generateReport,
@@ -22,6 +23,7 @@ router.patch('/password', authenticateJWT, changePassword);
 router.get('/chat', authenticateJWT, getChatInfo);
 router.delete('/chat', authenticateJWT, unlinkChat);
 router.put('/notification-preferences', authenticateJWT, updateNotificationPreferences);
+router.put('/temperament', authenticateJWT, updateTemperament);
 
 // Report routes
 router.post('/reports/generate', authenticateJWT, generateReport);

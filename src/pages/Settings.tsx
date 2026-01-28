@@ -48,6 +48,10 @@ export default function Settings() {
   const [notifyDashboard, setNotifyDashboard] = useState(true);
   const [savingNotifications, setSavingNotifications] = useState(false);
 
+  // Temperament state
+  const [temperament, setTemperament] = useState<'neutro' | 'direto' | 'motivador' | 'sarcastico' | 'temperamental'>('neutro');
+  const [savingTemperament, setSavingTemperament] = useState(false);
+
   // Reset level mutation
   const queryClient = useQueryClient();
   const resetLevelMutation = useMutation({
@@ -80,6 +84,7 @@ export default function Settings() {
         setNotifyEmail(data.notifyEmail);
         setNotifyChat(data.notifyChat);
         setNotifyDashboard(data.notifyDashboard);
+        setTemperament(data.temperament as 'neutro' | 'direto' | 'motivador' | 'sarcastico' | 'temperamental');
 
         // Carregar info do chat
         const chatData = await userAPI.getChatInfo();
@@ -176,6 +181,19 @@ export default function Settings() {
       toast.error(message);
     } finally {
       setSavingNotifications(false);
+    }
+  };
+
+  const handleSaveTemperament = async () => {
+    setSavingTemperament(true);
+    try {
+      await userAPI.updateTemperament(temperament);
+      toast.success('Temperamento da IA atualizado!');
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Erro ao salvar temperamento';
+      toast.error(message);
+    } finally {
+      setSavingTemperament(false);
     }
   };
 
@@ -522,6 +540,48 @@ export default function Settings() {
                 className="w-full sm:w-auto"
               >
                 {savingNotifications ? 'Salvando...' : 'Salvar Preferências'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* AI Temperament Card */}
+          <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '550ms', animationFillMode: 'forwards' }}>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-primary" />
+                <CardTitle>Temperamento da IA</CardTitle>
+              </div>
+              <CardDescription>Define o tom dos Avisos da IA</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="temperament">Tom dos Alertas</Label>
+                <Select
+                  value={temperament}
+                  onValueChange={(value: 'neutro' | 'direto' | 'motivador' | 'sarcastico' | 'temperamental') => setTemperament(value)}
+                >
+                  <SelectTrigger id="temperament" className="bg-secondary/50">
+                    <SelectValue placeholder="Selecione o temperamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="neutro">Neutro (padrão)</SelectItem>
+                    <SelectItem value="direto">Direto</SelectItem>
+                    <SelectItem value="motivador">Motivador</SelectItem>
+                    <SelectItem value="sarcastico">Sarcástico</SelectItem>
+                    <SelectItem value="temperamental">Temperamental</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  O temperamento afeta apenas os avisos da IA gerados após a mudança
+                </p>
+              </div>
+
+              <Button
+                onClick={handleSaveTemperament}
+                disabled={savingTemperament}
+                className="w-full sm:w-auto"
+              >
+                {savingTemperament ? 'Salvando...' : 'Salvar'}
               </Button>
             </CardContent>
           </Card>

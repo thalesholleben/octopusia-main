@@ -77,6 +77,7 @@ export interface User {
   notifyEmail?: boolean;
   notifyChat?: boolean;
   notifyDashboard?: boolean;
+  temperament?: 'neutro' | 'direto' | 'motivador' | 'sarcastico' | 'temperamental';
 }
 
 export interface AuthResponse {
@@ -322,6 +323,7 @@ export const userAPI = {
     notifyEmail: boolean;
     notifyChat: boolean;
     notifyDashboard: boolean;
+    temperament: string;
   }>('/user/settings'),
 
   updateReportPreference: (report: 'none' | 'simple' | 'advanced') =>
@@ -351,6 +353,9 @@ export const userAPI = {
     notifyChat: boolean;
     notifyDashboard: boolean;
   }>('/user/notification-preferences', preferences),
+
+  updateTemperament: (temperament: 'neutro' | 'direto' | 'motivador' | 'sarcastico' | 'temperamental') =>
+    api.put<{ temperament: string }>('/user/temperament', { temperament }),
 };
 
 // Health Metrics API Types
