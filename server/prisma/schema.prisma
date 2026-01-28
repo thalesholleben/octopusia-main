@@ -29,6 +29,7 @@ model User {
   notifyEmail       Boolean   @default(true)  @map("notify_email")
   notifyChat        Boolean   @default(true)  @map("notify_chat")
   notifyDashboard   Boolean   @default(true)  @map("notify_dashboard")
+  temperament       String    @default("neutro") // 'neutro' | 'direto' | 'motivador' | 'sarcastico' | 'temperamental'
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
 
