@@ -434,8 +434,8 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
       const result = await recurrenceService.createRecurrentRecords({
         userId,
         valor: data.valor !== undefined ? data.valor : Number(existing.valor),
-        de: data.de !== undefined ? data.de : existing.de,
-        para: data.para !== undefined ? data.para : existing.para,
+        de: (data.de !== undefined ? data.de : existing.de) || undefined,
+        para: (data.para !== undefined ? data.para : existing.para) || undefined,
         tipo: (data.tipo !== undefined ? data.tipo : existing.tipo) as 'entrada' | 'saida',
         categoria: data.categoria !== undefined ? data.categoria : existing.categoria,
         dataComprovante: utcDate,
