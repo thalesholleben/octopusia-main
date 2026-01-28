@@ -251,8 +251,10 @@ export const financeAPI = {
     categoria?: string;
     classificacao?: 'variavel' | 'recorrente' | null; // REMOVIDO 'fixo'
     dataComprovante?: string;
+    recurrenceInterval?: 'semanal' | 'mensal' | 'trimestral' | 'semestral' | 'anual'; // Para converter variável → recorrente
+    recurrenceDuration?: '3_meses' | '6_meses' | '12_meses' | 'indefinido'; // Para converter variável → recorrente
   }, scope?: 'single' | 'future') =>
-    api.put<{ message: string; record?: FinanceRecord; updatedCount?: number }>(`/finance/records/${id}${scope ? `?scope=${scope}` : ''}`, data),
+    api.put<{ message: string; record?: FinanceRecord; updatedCount?: number; totalCreated?: number; recurrenceGroupId?: string }>(`/finance/records/${id}${scope ? `?scope=${scope}` : ''}`, data),
 
   deleteRecord: (id: string, scope?: 'single' | 'future') =>
     api.delete<{ message: string; deletedCount?: number }>(`/finance/records/${id}${scope ? `?scope=${scope}` : ''}`),

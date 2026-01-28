@@ -144,40 +144,40 @@ export function RecordTable({
         )}
 
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">Data</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>De</TableHead>
-              <TableHead>Para</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Classificação</TableHead>
+              <TableHead className="w-[110px]">Data</TableHead>
+              <TableHead className="text-right w-[130px] whitespace-nowrap">Valor</TableHead>
+              <TableHead className="w-[120px]">De</TableHead>
+              <TableHead className="w-[120px]">Para</TableHead>
+              <TableHead className="w-[100px]">Tipo</TableHead>
+              <TableHead className="min-w-[130px]">Categoria</TableHead>
+              <TableHead className="min-w-[120px]">Classificação</TableHead>
               <TableHead className="text-right w-[100px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {records.map((record) => (
               <TableRow key={record.id}>
-                <TableCell className="font-medium text-sm">
+                <TableCell className="font-medium text-sm whitespace-nowrap">
                   {formatDate(record.dataComprovante)}
                 </TableCell>
                 <TableCell className={cn(
-                  'text-right font-medium',
+                  'text-right font-medium whitespace-nowrap',
                   record.tipo === 'entrada' ? 'text-green-500' : 'text-orange-500'
                 )}>
                   {record.tipo === 'saida' ? '-' : '+'}{formatCurrency(record.valor)}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-sm text-muted-foreground max-w-[120px] truncate">
                   {record.de || '-'}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-sm text-muted-foreground max-w-[120px] truncate">
                   {record.para || '-'}
                 </TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap">
                   <span className={cn(
-                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap',
                     record.tipo === 'entrada'
                       ? 'bg-green-500/10 text-green-500'
                       : 'bg-orange-500/10 text-orange-500'
@@ -185,15 +185,15 @@ export function RecordTable({
                     {record.tipo === 'entrada' ? 'Entrada' : 'Saída'}
                   </span>
                 </TableCell>
-                <TableCell>
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                <TableCell className="whitespace-nowrap">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap max-w-full truncate">
                     {record.categoria}
                   </span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap">
                   {record.classificacao ? (
                     <span className={cn(
-                      'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                      'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap',
                       record.classificacao === 'variavel' && 'bg-purple-500/10 text-purple-500',
                       record.classificacao === 'recorrente' && 'bg-cyan-500/10 text-cyan-500',
                     )}>
@@ -204,7 +204,7 @@ export function RecordTable({
                     <span className="text-muted-foreground text-sm">-</span>
                   )}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1">
                     <Button
                       variant="ghost"

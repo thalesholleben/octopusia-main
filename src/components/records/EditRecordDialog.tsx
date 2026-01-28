@@ -45,6 +45,8 @@ interface EditRecordDialogProps {
       categoria?: string;
       classificacao?: 'variavel' | 'recorrente' | null; // REMOVIDO 'fixo'
       dataComprovante?: string;
+      recurrenceInterval?: RecurrenceInterval; // Para converter variável → recorrente
+      recurrenceDuration?: RecurrenceDuration; // Para converter variável → recorrente
     };
     scope?: 'single' | 'future'; // Novo parâmetro para edição de recorrentes
   }) => void;
@@ -120,7 +122,12 @@ export function EditRecordDialog({
       return;
     }
 
-    const formData = {
+    // Validar campos de recorrência se estiver convertendo para 'recorrente'
+    if (classificacao === 'recorrente' && !record.recurrenceGroupId && (!recurrenceInterval || !recurrenceDuration)) {
+      return;
+    }
+
+    const formData: any = {
       valor: numericValue,
       de: de.trim() || null,
       para: para.trim() || null,
@@ -129,6 +136,12 @@ export function EditRecordDialog({
       classificacao: classificacao || null,
       dataComprovante,
     };
+
+    // Incluir campos de recorrência se estiver convertendo para recorrente
+    if (classificacao === 'recorrente' && !record.recurrenceGroupId && recurrenceInterval && recurrenceDuration) {
+      formData.recurrenceInterval = recurrenceInterval;
+      formData.recurrenceDuration = recurrenceDuration;
+    }
 
     // Se o registro tem recurrenceGroupId, mostrar dialog de confirmação
     if (record.recurrenceGroupId) {
@@ -232,7 +245,44 @@ export function EditRecordDialog({
             </div>
           </div>
 
-          {/* Mostrar informações de recorrência existente */}
+          {/* Campos de recorrência - permitir converter variável → recorrente */}
+          {classificacao === 'recorrente' && !record?.recurrenceGroupId && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-recurrenceInterval">Intervalo *</Label>
+                <Select value={recurrenceInterval || ''} onValueChange={(v) => setRecurrenceInterval(v as RecurrenceInterval)}>
+                  <SelectTrigger id="edit-recurrenceInterval">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRENCE_INTERVALS.map((interval) => (
+                      <SelectItem key={interval.value} value={interval.value}>
+                        {interval.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-recurrenceDuration">Duração *</Label>
+                <Select value={recurrenceDuration || ''} onValueChange={(v) => setRecurrenceDuration(v as RecurrenceDuration)}>
+                  <SelectTrigger id="edit-recurrenceDuration">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRENCE_DURATIONS.map((duration) => (
+                      <SelectItem key={duration.value} value={duration.value}>
+                        {duration.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          {/* Mostrar informações de recorrência existente (somente leitura) */}
           {record?.recurrenceGroupId && record?.recurrenceInterval && (
             <div className="p-3 bg-muted rounded-md">
               <p className="text-sm text-muted-foreground">

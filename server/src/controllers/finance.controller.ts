@@ -60,6 +60,18 @@ const updateRecordSchema = z.object({
   dataComprovante: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: 'Data inválida'
   }).optional(),
+  // Campos para converter variável → recorrente
+  recurrenceInterval: z.enum(['semanal', 'mensal', 'trimestral', 'semestral', 'anual']).optional(),
+  recurrenceDuration: z.enum(['3_meses', '6_meses', '12_meses', 'indefinido']).optional(),
+}).refine((data) => {
+  // Se está convertendo para recorrente, interval e duration são obrigatórios
+  if (data.classificacao === 'recorrente' && (data.recurrenceInterval || data.recurrenceDuration)) {
+    return data.recurrenceInterval && data.recurrenceDuration;
+  }
+  return true;
+}, {
+  message: 'Para converter em registro recorrente, intervalo e duração são obrigatórios',
+  path: ['recurrenceInterval'],
 });
 
 // Schema para categoria customizada
@@ -404,6 +416,66 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
     let utcDate;
     if (data.dataComprovante !== undefined) {
       utcDate = startOfDay(parseISO(data.dataComprovante + 'T00:00:00Z'));
+    } else {
+      utcDate = existing.dataComprovante; // Usar data existente se não fornecida
+    }
+
+    // ⚠️ CONVERSÃO VARIÁVEL → RECORRENTE
+    // Se estiver convertendo um registro variável em recorrente
+    if (
+      data.classificacao === 'recorrente' &&
+      !existing.recurrenceGroupId &&
+      data.recurrenceInterval &&
+      data.recurrenceDuration
+    ) {
+      const recurrenceService = new RecurrenceService(prisma);
+
+      // Criar registros futuros baseados no registro atual
+      const result = await recurrenceService.createRecurrentRecords({
+        userId,
+        valor: data.valor !== undefined ? data.valor : Number(existing.valor),
+        de: data.de !== undefined ? data.de : existing.de,
+        para: data.para !== undefined ? data.para : existing.para,
+        tipo: (data.tipo !== undefined ? data.tipo : existing.tipo) as 'entrada' | 'saida',
+        categoria: data.categoria !== undefined ? data.categoria : existing.categoria,
+        dataComprovante: utcDate,
+        recurrenceInterval: data.recurrenceInterval,
+        recurrenceDuration: data.recurrenceDuration,
+      });
+
+      // Atualizar o registro existente para fazer parte do grupo
+      await prisma.financeRecord.update({
+        where: { id },
+        data: {
+          valor: data.valor !== undefined ? data.valor : existing.valor,
+          de: data.de !== undefined ? data.de : existing.de,
+          para: data.para !== undefined ? data.para : existing.para,
+          tipo: data.tipo !== undefined ? data.tipo : existing.tipo,
+          categoria: data.categoria !== undefined ? data.categoria : existing.categoria,
+          classificacao: 'recorrente',
+          dataComprovante: utcDate,
+          recurrenceGroupId: result.recurrenceGroupId,
+          recurrenceInterval: data.recurrenceInterval,
+          isInfinite: data.recurrenceDuration === 'indefinido',
+          isFuture: isFutureDate(utcDate),
+        },
+      });
+
+      // Deletar os registros futuros criados pelo RecurrenceService (primeiro registro)
+      // pois o registro atual já existe e foi atualizado
+      await prisma.financeRecord.deleteMany({
+        where: {
+          recurrenceGroupId: result.recurrenceGroupId,
+          dataComprovante: utcDate,
+          id: { not: id }, // Não deletar o registro atual
+        },
+      });
+
+      return res.json({
+        message: `Registro convertido em recorrente com sucesso. ${result.totalCreated} ocorrências criadas.`,
+        totalCreated: result.totalCreated,
+        recurrenceGroupId: result.recurrenceGroupId,
+      });
     }
 
     const updateData: any = {
