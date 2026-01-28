@@ -170,7 +170,7 @@ export function FinancialHealthCard() {
             </div>
 
             {/* Footer - Disclaimer */}
-            <p className="text-[10px] text-muted-foreground/60 text-center mt-3">
+            <p className="text-[12px] text-muted-foreground/70 text-center mt-3">
               Score baseado nos próximos 30 dias. Registros inconsistentes invalidam o Score.
             </p>
           </>
