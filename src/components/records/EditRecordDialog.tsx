@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { FinanceRecord } from '@/lib/api';
+import { RECURRENCE_INTERVALS, RECURRENCE_DURATIONS, RecurrenceInterval, RecurrenceDuration } from '@/types/financial';
 
 interface EditRecordDialogProps {
   record: FinanceRecord | null;
@@ -68,6 +69,9 @@ export function EditRecordDialog({
   const [dataComprovante, setDataComprovante] = useState('');
   const [showScopeDialog, setShowScopeDialog] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
+  // Novos estados para recorrência
+  const [recurrenceInterval, setRecurrenceInterval] = useState<RecurrenceInterval | ''>('');
+  const [recurrenceDuration, setRecurrenceDuration] = useState<RecurrenceDuration | ''>('');
 
   // Populate form when record changes
   useEffect(() => {
@@ -78,6 +82,8 @@ export function EditRecordDialog({
       setTipo(record.tipo);
       setCategoria(record.categoria);
       setClassificacao(record.classificacao || '');
+      setRecurrenceInterval(record.recurrenceInterval || '');
+      setRecurrenceDuration(''); // Não armazenamos duration no registro, só no grupo
       try {
         const date = parseISO(record.dataComprovante);
         setDataComprovante(format(date, 'yyyy-MM-dd'));
@@ -191,7 +197,7 @@ export function EditRecordDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-categoria">Categoria *</Label>
-              <Select value={categoria || undefined} onValueChange={setCategoria}>
+              <Select value={categoria || ''} onValueChange={setCategoria}>
                 <SelectTrigger id="edit-categoria">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -206,7 +212,7 @@ export function EditRecordDialog({
             <div className="space-y-2">
               <Label htmlFor="edit-classificacao">Classificação</Label>
               <Select
-                value={classificacao || undefined}
+                value={classificacao || ''}
                 onValueChange={(v) => setClassificacao(v as any)}
                 disabled={!!record?.recurrenceGroupId} // Desabilitar se for recorrente
               >
@@ -225,6 +231,16 @@ export function EditRecordDialog({
               )}
             </div>
           </div>
+
+          {/* Mostrar informações de recorrência existente */}
+          {record?.recurrenceGroupId && record?.recurrenceInterval && (
+            <div className="p-3 bg-muted rounded-md">
+              <p className="text-sm text-muted-foreground">
+                <strong>Recorrência:</strong> {RECURRENCE_INTERVALS.find(i => i.value === record.recurrenceInterval)?.label}
+                {record.isInfinite && ' (Indeterminado)'}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="edit-dataComprovante">Data *</Label>

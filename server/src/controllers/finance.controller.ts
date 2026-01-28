@@ -373,6 +373,11 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
       return res.status(400).json({ error: error.errors[0].message });
     }
     console.error('Create finance record error:', error);
+    // Log detalhado do erro para debug
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     res.status(500).json({ error: 'Erro ao criar registro financeiro' });
   }
 };
