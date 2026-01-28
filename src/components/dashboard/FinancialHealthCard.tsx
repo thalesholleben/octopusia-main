@@ -88,8 +88,8 @@ export function FinancialHealthCard() {
         style={{ animationDelay: '500ms', animationFillMode: 'forwards' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 sm:mb-5">
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="mb-4 sm:mb-5">
+          <div className="flex items-center gap-2 sm:gap-3 mb-1">
             <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
               <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
@@ -97,6 +97,9 @@ export function FinancialHealthCard() {
               Saúde Financeira
             </h2>
           </div>
+          <p className="text-[10px] text-muted-foreground/70 pl-10 sm:pl-11">
+            Score baseado nos próximos 30 dias. Registros inconsistentes invalidam o Score.
+          </p>
         </div>
 
         {/* Content */}
@@ -154,10 +157,6 @@ export function FinancialHealthCard() {
                     )}
                   >
                     {metrics.scoreLabel}
-                  </span>
-                  {/* Label de horizonte */}
-                  <span className="text-[10px] text-muted-foreground mt-2">
-                    Baseado nos próximos 30 dias
                   </span>
                 </div>
               </div>
