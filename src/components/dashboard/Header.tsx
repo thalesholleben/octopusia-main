@@ -1,6 +1,6 @@
 import { LogOut, Settings, Target, FileText, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import octopusLogo from '@/assets/octopus-logo.svg';
+import octopusLogo from '@/assets/octopus-icon.svg';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
