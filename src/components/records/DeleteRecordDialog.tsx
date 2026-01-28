@@ -55,35 +55,35 @@ export function DeleteRecordDialog({
   if (record && record.recurrenceGroupId) {
     return (
       <AlertDialog open={open} onOpenChange={onOpenChange}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-[480px]">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir registro recorrente</AlertDialogTitle>
             <AlertDialogDescription>
               Este registro faz parte de uma série de registros recorrentes. Como deseja excluir?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:gap-3">
-            <div className="flex flex-col sm:flex-row gap-2 w-full">
+          <AlertDialogFooter className="flex-col gap-3 sm:flex-col">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <AlertDialogAction
                 onClick={() => {
                   onConfirm(record.id, 'single');
                   onOpenChange(false);
                 }}
-                className="bg-primary hover:bg-primary/90 flex-1"
+                className="flex-1 bg-primary hover:bg-primary/90"
               >
-                Apenas este registro
+                Apenas este
               </AlertDialogAction>
               <AlertDialogAction
                 onClick={() => {
                   onConfirm(record.id, 'future');
                   onOpenChange(false);
                 }}
-                className="bg-destructive hover:bg-destructive/90 flex-1"
+                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
               >
-                Este e todos os futuros
+                Todos os futuros
               </AlertDialogAction>
             </div>
-            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="w-full">Cancelar</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
