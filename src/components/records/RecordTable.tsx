@@ -147,14 +147,14 @@ export function RecordTable({
           <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[110px]">Data</TableHead>
-              <TableHead className="text-right w-[130px] whitespace-nowrap">Valor</TableHead>
-              <TableHead className="w-[120px]">De</TableHead>
-              <TableHead className="w-[120px]">Para</TableHead>
-              <TableHead className="w-[100px]">Tipo</TableHead>
-              <TableHead className="min-w-[130px]">Categoria</TableHead>
-              <TableHead className="min-w-[120px]">Classificação</TableHead>
-              <TableHead className="text-right w-[100px]">Ações</TableHead>
+              <TableHead className="w-[120px]">Data</TableHead>
+              <TableHead className="text-right w-[140px] whitespace-nowrap">Valor</TableHead>
+              <TableHead className="w-[150px]">De</TableHead>
+              <TableHead className="w-[150px]">Para</TableHead>
+              <TableHead className="w-[110px]">Tipo</TableHead>
+              <TableHead className="w-[160px]">Categoria</TableHead>
+              <TableHead className="w-[140px]">Classificação</TableHead>
+              <TableHead className="text-right w-[110px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
