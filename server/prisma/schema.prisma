@@ -7,6 +7,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// NOVO ENUM - garante type-safety no banco
+enum RecurrenceInterval {
+  semanal
+  mensal
+  trimestral
+  semestral
+  anual
+}
+
 model User {
   id            String         @id @default(uuid())
   email         String         @unique
@@ -51,12 +60,21 @@ model FinanceRecord {
   dataComprovante DateTime @map("data_comprovante") @db.Date
   createdAt       DateTime @default(now()) @map("created_at")
 
+  // ⚠️ IMPORTANTE: isFuture é derivado de dataComprovante > hoje
+  // Sempre recalcular antes de usar em queries críticas
+  isFuture           Boolean             @default(false) @map("is_future")
+  recurrenceGroupId  String?             @db.Uuid @map("recurrence_group_id") // UUID explícito
+  recurrenceInterval RecurrenceInterval? @map("recurrence_interval")          // ENUM, não String
+  isInfinite         Boolean             @default(false) @map("is_infinite")
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Índices compostos para queries comuns
   @@index([userId, dataComprovante(sort: Desc)]) // Query principal: buscar por usuário + ordenar por data
   @@index([userId, tipo, dataComprovante]) // Filtro por tipo + data
   @@index([userId, categoria]) // Filtro por categoria
+  @@index([userId, recurrenceGroupId]) // Query por grupo de recorrência
+  @@index([userId, isFuture]) // Query de registros futuros
   @@map("finance_records")
 }
 

@@ -36,7 +36,7 @@ interface RecordTableProps {
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
   onEdit: (record: FinanceRecord) => void;
-  onDelete: (id: string) => void;
+  onDelete: (record: FinanceRecord) => void; // Mudado de (id: string) para (record: FinanceRecord)
   isLoading?: boolean;
   isFetching?: boolean;
 }
@@ -194,11 +194,9 @@ export function RecordTable({
                   {record.classificacao ? (
                     <span className={cn(
                       'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                      record.classificacao === 'fixo' && 'bg-blue-500/10 text-blue-500',
                       record.classificacao === 'variavel' && 'bg-purple-500/10 text-purple-500',
                       record.classificacao === 'recorrente' && 'bg-cyan-500/10 text-cyan-500',
                     )}>
-                      {record.classificacao === 'fixo' && 'Fixo'}
                       {record.classificacao === 'variavel' && 'Variável'}
                       {record.classificacao === 'recorrente' && 'Recorrente'}
                     </span>
@@ -220,7 +218,7 @@ export function RecordTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => onDelete(record.id)}
+                      onClick={() => onDelete(record)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

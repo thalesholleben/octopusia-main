@@ -6,6 +6,7 @@ import { RecordTable } from '@/components/records/RecordTable';
 import { RecordFilters } from '@/components/records/RecordFilters';
 import { CreateRecordDialog } from '@/components/records/CreateRecordDialog';
 import { EditRecordDialog } from '@/components/records/EditRecordDialog';
+import { DeleteRecordDialog } from '@/components/records/DeleteRecordDialog';
 import { CategoryManager } from '@/components/records/CategoryManager';
 import { useRecordsData } from '@/hooks/useRecordsData';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +23,7 @@ const Records = () => {
   const [tipoFilter, setTipoFilter] = useState<'entrada' | 'saida' | undefined>();
   const [categoriaFilter, setCategoriaFilter] = useState<string | undefined>();
   const [editingRecord, setEditingRecord] = useState<FinanceRecord | null>(null);
+  const [deletingRecord, setDeletingRecord] = useState<FinanceRecord | null>(null);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -70,13 +72,15 @@ const Records = () => {
     setEditingRecord(null);
   };
 
-  const handleDeleteRecord = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este registro?')) {
-      mutations.deleteRecord(id);
-      // Se deletar último registro da página E não for página 1, voltar para página anterior
-      if (records.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
+  const handleDeleteRecord = (record: FinanceRecord) => {
+    setDeletingRecord(record);
+  };
+
+  const handleConfirmDelete = (id: string, scope?: 'single' | 'future') => {
+    mutations.deleteRecord(id, scope);
+    // Se deletar último registro da página E não for página 1, voltar para página anterior
+    if (records.length === 1 && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -243,6 +247,14 @@ const Records = () => {
         onSubmit={handleUpdateRecord}
         isLoading={mutations.isUpdating}
         categories={allCategories}
+      />
+
+      {/* Delete Record Dialog */}
+      <DeleteRecordDialog
+        record={deletingRecord}
+        open={!!deletingRecord}
+        onOpenChange={(open) => !open && setDeletingRecord(null)}
+        onConfirm={handleConfirmDelete}
       />
 
       {/* Category Manager Dialog */}

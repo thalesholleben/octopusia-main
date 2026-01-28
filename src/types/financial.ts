@@ -6,10 +6,34 @@ export interface FinanceRecord {
   para?: string;
   tipo: 'entrada' | 'saida';
   categoria: string;
-  classificacao?: 'fixo' | 'variavel' | 'recorrente';
+  classificacao?: 'variavel' | 'recorrente'; // REMOVIDO 'fixo'
   dataComprovante: string;
   createdAt: string;
+  // Novos campos de recorrência
+  isFuture?: boolean;
+  recurrenceGroupId?: string;
+  recurrenceInterval?: RecurrenceInterval;
+  isInfinite?: boolean;
 }
+
+// Tipos de recorrência
+export type RecurrenceInterval = 'semanal' | 'mensal' | 'trimestral' | 'semestral' | 'anual';
+export type RecurrenceDuration = '3_meses' | '6_meses' | '12_meses' | 'indefinido';
+
+export const RECURRENCE_INTERVALS = [
+  { value: 'semanal', label: 'Semanal' },
+  { value: 'mensal', label: 'Mensal' },
+  { value: 'trimestral', label: 'Trimestral' },
+  { value: 'semestral', label: 'Semestral' },
+  { value: 'anual', label: 'Anual' },
+] as const;
+
+export const RECURRENCE_DURATIONS = [
+  { value: '3_meses', label: '3 meses' },
+  { value: '6_meses', label: '6 meses' },
+  { value: '12_meses', label: '12 meses' },
+  { value: 'indefinido', label: 'Indeterminado' },
+] as const;
 
 export interface AIAlert {
   id: string;
@@ -31,9 +55,9 @@ export interface DateFilter {
 }
 
 // Categorias de saída
+// ⚠️ IMPORTANTE: 'Contas Fixas' removido - agora usar classificacao='recorrente'
 export const EXPENSE_CATEGORIES = [
   'Aluguel',
-  'Contas Fixas',
   'Alimentação',
   'FastFood',
   'Transporte',
@@ -77,5 +101,6 @@ export interface CategoriesResponse {
 }
 
 // Classificações
-export const CLASSIFICACOES = ['fixo', 'variavel', 'recorrente'] as const;
+// ⚠️ IMPORTANTE: 'fixo' removido - agora usar 'recorrente' para despesas fixas
+export const CLASSIFICACOES = ['variavel', 'recorrente'] as const;
 export type Classificacao = typeof CLASSIFICACOES[number];

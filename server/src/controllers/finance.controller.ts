@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { subMonths, parseISO, startOfDay } from 'date-fns';
 import prisma from '../config/database';
 import { FinanceService } from '../services/finance.service';
+import { RecurrenceService } from '../services/recurrence.service';
+import { isFutureDate } from '../utils/recurrence.utils';
 
 // Instanciar o FinanceService
 const financeService = new FinanceService(prisma);
@@ -30,10 +32,21 @@ const createRecordSchema = z.object({
     errorMap: () => ({ message: 'Tipo deve ser "entrada" ou "saida"' })
   }),
   categoria: z.string().min(1, 'Categoria é obrigatória'),
-  classificacao: z.enum(['fixo', 'variavel', 'recorrente']).optional(),
+  classificacao: z.enum(['variavel', 'recorrente']).optional(), // REMOVIDO 'fixo'
+  recurrenceInterval: z.enum(['semanal', 'mensal', 'trimestral', 'semestral', 'anual']).optional(),
+  recurrenceDuration: z.enum(['3_meses', '6_meses', '12_meses', 'indefinido']).optional(),
   dataComprovante: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: 'Data inválida'
   }),
+}).refine((data) => {
+  // Se classificacao === 'recorrente', interval e duration são obrigatórios
+  if (data.classificacao === 'recorrente') {
+    return data.recurrenceInterval && data.recurrenceDuration;
+  }
+  return true;
+}, {
+  message: 'Para registros recorrentes, intervalo e duração são obrigatórios',
+  path: ['recurrenceInterval'],
 });
 
 // Schema de validação para atualização de registro
@@ -43,7 +56,7 @@ const updateRecordSchema = z.object({
   para: z.string().optional().nullable(),
   tipo: z.enum(['entrada', 'saida']).optional(),
   categoria: z.string().min(1, 'Categoria é obrigatória').optional(),
-  classificacao: z.enum(['fixo', 'variavel', 'recorrente']).optional().nullable(),
+  classificacao: z.enum(['variavel', 'recorrente']).optional().nullable(), // REMOVIDO 'fixo'
   dataComprovante: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: 'Data inválida'
   }).optional(),
@@ -63,8 +76,9 @@ const balanceAdjustmentSchema = z.object({
 });
 
 // Categorias padrão
+// ⚠️ IMPORTANTE: 'Contas Fixas' removido - agora usar classificacao='recorrente'
 const DEFAULT_EXPENSE_CATEGORIES = [
-  'Aluguel', 'Contas Fixas', 'Alimentação', 'FastFood', 'Transporte',
+  'Aluguel', 'Alimentação', 'FastFood', 'Transporte',
   'Saúde', 'Filhos', 'Trabalho', 'Ferramentas', 'Lazer e Vida Social',
   'Dívidas', 'Reserva', 'Objetivos', 'Educação', 'Imprevistos', 'Outros'
 ];
@@ -311,6 +325,31 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
     // Input: "2026-01-22" -> Output: Date object at UTC midnight
     const utcDate = startOfDay(parseISO(data.dataComprovante + 'T00:00:00Z'));
 
+    // Se é recorrente, usar RecurrenceService
+    if (data.classificacao === 'recorrente' && data.recurrenceInterval && data.recurrenceDuration) {
+      const recurrenceService = new RecurrenceService(prisma);
+
+      const result = await recurrenceService.createRecurrentRecords({
+        userId,
+        valor: data.valor,
+        de: data.de,
+        para: data.para,
+        tipo: data.tipo,
+        categoria: data.categoria,
+        dataComprovante: utcDate,
+        recurrenceInterval: data.recurrenceInterval,
+        recurrenceDuration: data.recurrenceDuration,
+      });
+
+      return res.status(201).json({
+        message: `${result.totalCreated} registros recorrentes criados com sucesso`,
+        records: result.records,
+        recurrenceGroupId: result.recurrenceGroupId,
+        totalCreated: result.totalCreated,
+      });
+    }
+
+    // Se é variável ou sem classificação, criar registro único
     const record = await prisma.financeRecord.create({
       data: {
         userId,
@@ -319,8 +358,9 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
         para: data.para,
         tipo: data.tipo,
         categoria: data.categoria,
-        classificacao: data.classificacao,
+        classificacao: data.classificacao || 'variavel',
         dataComprovante: utcDate,
+        isFuture: isFutureDate(utcDate), // ⚠️ Calcular isFuture na criação
       },
     });
 
@@ -338,10 +378,12 @@ export const createFinanceRecord = async (req: Request, res: Response) => {
 };
 
 // Atualizar registro financeiro
+// PUT /finance/records/:id?scope=single|future
 export const updateFinanceRecord = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
+    const { scope } = req.query; // 'single' | 'future'
     const data = updateRecordSchema.parse(req.body);
 
     // Verificar se o registro pertence ao usuário
@@ -359,17 +401,37 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
       utcDate = startOfDay(parseISO(data.dataComprovante + 'T00:00:00Z'));
     }
 
+    const updateData: any = {
+      ...(data.valor !== undefined && { valor: data.valor }),
+      ...(data.de !== undefined && { de: data.de }),
+      ...(data.para !== undefined && { para: data.para }),
+      ...(data.tipo !== undefined && { tipo: data.tipo }),
+      ...(data.categoria !== undefined && { categoria: data.categoria }),
+      ...(data.classificacao !== undefined && { classificacao: data.classificacao }),
+      ...(utcDate !== undefined && { dataComprovante: utcDate }),
+    };
+
+    // Se scope=future E registro tem recurrenceGroupId, atualizar todos futuros
+    if (scope === 'future' && existing.recurrenceGroupId) {
+      const { count } = await prisma.financeRecord.updateMany({
+        where: {
+          userId,
+          recurrenceGroupId: existing.recurrenceGroupId,
+          dataComprovante: { gte: existing.dataComprovante },
+        },
+        data: updateData,
+      });
+
+      return res.json({
+        message: `${count} registros atualizados com sucesso`,
+        updatedCount: count,
+      });
+    }
+
+    // Caso contrário, atualizar apenas o registro específico
     const record = await prisma.financeRecord.update({
       where: { id },
-      data: {
-        ...(data.valor !== undefined && { valor: data.valor }),
-        ...(data.de !== undefined && { de: data.de }),
-        ...(data.para !== undefined && { para: data.para }),
-        ...(data.tipo !== undefined && { tipo: data.tipo }),
-        ...(data.categoria !== undefined && { categoria: data.categoria }),
-        ...(data.classificacao !== undefined && { classificacao: data.classificacao }),
-        ...(utcDate !== undefined && { dataComprovante: utcDate }),
-      },
+      data: updateData,
     });
 
     res.json({ message: 'Registro atualizado com sucesso', record });
@@ -383,10 +445,12 @@ export const updateFinanceRecord = async (req: Request, res: Response) => {
 };
 
 // Excluir registro financeiro
+// DELETE /finance/records/:id?scope=single|future
 export const deleteFinanceRecord = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
+    const { scope } = req.query; // 'single' | 'future'
 
     // Verificar se o registro pertence ao usuário
     const existing = await prisma.financeRecord.findFirst({
@@ -397,6 +461,23 @@ export const deleteFinanceRecord = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Registro não encontrado' });
     }
 
+    // Se scope=future E registro tem recurrenceGroupId, excluir todos futuros
+    if (scope === 'future' && existing.recurrenceGroupId) {
+      const { count } = await prisma.financeRecord.deleteMany({
+        where: {
+          userId,
+          recurrenceGroupId: existing.recurrenceGroupId,
+          dataComprovante: { gte: existing.dataComprovante },
+        },
+      });
+
+      return res.json({
+        message: `${count} registros excluídos com sucesso`,
+        deletedCount: count,
+      });
+    }
+
+    // Caso contrário, excluir apenas o registro específico
     await prisma.financeRecord.delete({ where: { id } });
 
     res.json({ message: 'Registro excluído com sucesso' });

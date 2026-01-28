@@ -93,9 +93,14 @@ export interface FinanceRecord {
   para?: string;
   tipo: 'entrada' | 'saida';
   categoria: string;
-  classificacao?: 'fixo' | 'variavel' | 'recorrente';
+  classificacao?: 'variavel' | 'recorrente'; // REMOVIDO 'fixo'
   dataComprovante: string;
   createdAt: string;
+  // Novos campos de recorrência
+  isFuture?: boolean;
+  recurrenceGroupId?: string;
+  recurrenceInterval?: 'semanal' | 'mensal' | 'trimestral' | 'semestral' | 'anual';
+  isInfinite?: boolean;
 }
 
 export interface AIAlert {
@@ -232,9 +237,11 @@ export const financeAPI = {
     para?: string;
     tipo: 'entrada' | 'saida';
     categoria: string;
-    classificacao?: 'fixo' | 'variavel' | 'recorrente';
+    classificacao?: 'variavel' | 'recorrente'; // REMOVIDO 'fixo'
     dataComprovante: string;
-  }) => api.post<{ message: string; record: FinanceRecord }>('/finance/records', data),
+    recurrenceInterval?: 'semanal' | 'mensal' | 'trimestral' | 'semestral' | 'anual';
+    recurrenceDuration?: '3_meses' | '6_meses' | '12_meses' | 'indefinido';
+  }) => api.post<{ message: string; record?: FinanceRecord; records?: FinanceRecord[]; recurrenceGroupId?: string; totalCreated?: number }>('/finance/records', data),
 
   updateRecord: (id: string, data: {
     valor?: number;
@@ -242,12 +249,13 @@ export const financeAPI = {
     para?: string | null;
     tipo?: 'entrada' | 'saida';
     categoria?: string;
-    classificacao?: 'fixo' | 'variavel' | 'recorrente' | null;
+    classificacao?: 'variavel' | 'recorrente' | null; // REMOVIDO 'fixo'
     dataComprovante?: string;
-  }) => api.put<{ message: string; record: FinanceRecord }>(`/finance/records/${id}`, data),
+  }, scope?: 'single' | 'future') =>
+    api.put<{ message: string; record?: FinanceRecord; updatedCount?: number }>(`/finance/records/${id}${scope ? `?scope=${scope}` : ''}`, data),
 
-  deleteRecord: (id: string) =>
-    api.delete<{ message: string }>(`/finance/records/${id}`),
+  deleteRecord: (id: string, scope?: 'single' | 'future') =>
+    api.delete<{ message: string; deletedCount?: number }>(`/finance/records/${id}${scope ? `?scope=${scope}` : ''}`),
 
   getAlerts: () => api.get<{ alerts: AIAlert[] }>('/finance/alerts'),
 

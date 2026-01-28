@@ -14,6 +14,7 @@ import type {
   FinanceRecordDTO,
   AIAlertDTO,
 } from '../types/finance.types';
+import { RecurrenceService } from './recurrence.service';
 
 export class FinanceService {
   constructor(private prisma: PrismaClient) {}
@@ -25,10 +26,20 @@ export class FinanceService {
     userId: string,
     filters: FinanceFilters
   ): Promise<FinanceKPIs> {
-    // Buscar registros filtrados (para cálculos que respeitam filtros)
-    const filteredRecords = await this.getRecords(userId, filters);
+    const recurrenceService = new RecurrenceService(this.prisma);
 
-    // Buscar TODOS os registros (para mediaMensal que ignora filtros)
+    // ⚠️ ORDEM IMPORTA:
+    // 1. Sincronizar isFuture PRIMEIRO (recalcula baseado em dataComprovante > hoje)
+    await recurrenceService.syncIsFutureFlags(userId);
+
+    // 2. Buffer com GUARDAS (só executa se necessário)
+    await recurrenceService.ensureRecurrenceBuffer(userId);
+
+    // 3. Buscar registros filtrados (para cálculos que respeitam filtros)
+    // IMPORTANTE: includeFuture=false para excluir registros futuros dos KPIs
+    const filteredRecords = await this.getRecords(userId, filters, false);
+
+    // 4. Buscar TODOS os registros (para mediaMensal que ignora filtros)
     const allRecords = await this.getAllRecords(userId);
 
     // Calcular entradas, saídas e saldo
@@ -90,20 +101,38 @@ export class FinanceService {
    */
   async getRecords(
     userId: string,
-    filters: FinanceFilters
+    filters: FinanceFilters,
+    includeFuture: boolean = false
   ): Promise<FinanceRecordDTO[]> {
     const where: any = { userId };
 
+    // ⚠️ CRÍTICO: Filtro de futuros
+    // Usar dataComprovante como fonte de verdade, isFuture como otimização
+    if (!includeFuture) {
+      const today = startOfDay(new Date());
+      where.dataComprovante = { lte: today };
+    }
+
     // Aplicar filtros de data (UTC)
     if (filters.startDate || filters.endDate) {
-      where.dataComprovante = {};
+      if (!where.dataComprovante) {
+        where.dataComprovante = {};
+      }
       if (filters.startDate) {
         // Parse como UTC: YYYY-MM-DD -> início do dia em UTC
-        where.dataComprovante.gte = startOfDay(parseISO(filters.startDate + 'T00:00:00Z'));
+        const startDate = startOfDay(parseISO(filters.startDate + 'T00:00:00Z'));
+        // Combinar com filtro de futuros (pegar o maior entre startDate e o filtro existente)
+        where.dataComprovante.gte = startDate;
       }
       if (filters.endDate) {
         // Parse como UTC: YYYY-MM-DD -> fim do dia em UTC
-        where.dataComprovante.lte = endOfDay(parseISO(filters.endDate + 'T23:59:59Z'));
+        const endDate = endOfDay(parseISO(filters.endDate + 'T23:59:59Z'));
+        // Combinar com filtro de futuros (pegar o menor entre endDate e o filtro existente)
+        if (where.dataComprovante.lte) {
+          where.dataComprovante.lte = endDate < where.dataComprovante.lte ? endDate : where.dataComprovante.lte;
+        } else {
+          where.dataComprovante.lte = endDate;
+        }
       }
     }
 
@@ -136,10 +165,15 @@ export class FinanceService {
   /**
    * Buscar TODOS os registros (sem filtros de data/tipo/categoria)
    * Usado para calcular mediaMensal que ignora filtros do usuário
+   * ⚠️ IMPORTANTE: Ainda filtra registros futuros
    */
   private async getAllRecords(userId: string): Promise<FinanceRecordDTO[]> {
+    const today = startOfDay(new Date());
     const records = await this.prisma.financeRecord.findMany({
-      where: { userId },
+      where: {
+        userId,
+        dataComprovante: { lte: today }, // Excluir registros futuros
+      },
       orderBy: { dataComprovante: 'desc' },
     });
 
@@ -577,9 +611,10 @@ export class FinanceService {
   }
 
   private calculateFixedCommitment(records: any[]) {
-    // Despesas fixas (classificacao = 'fixo')
+    // ⚠️ IMPORTANTE: 'fixo' foi removido, agora usar 'recorrente' como proxy
+    // Despesas recorrentes representam compromissos fixos
     const fixedExpenses = records
-      .filter((r) => r.tipo === 'saida' && r.classificacao === 'fixo')
+      .filter((r) => r.tipo === 'saida' && r.classificacao === 'recorrente')
       .reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
 
     // Total de entradas

@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RECURRENCE_INTERVALS, RECURRENCE_DURATIONS, RecurrenceInterval, RecurrenceDuration } from '@/types/financial';
 
 interface CreateRecordDialogProps {
   onSubmit: (data: {
@@ -28,8 +29,10 @@ interface CreateRecordDialogProps {
     para?: string;
     tipo: 'entrada' | 'saida';
     categoria: string;
-    classificacao?: 'fixo' | 'variavel' | 'recorrente';
+    classificacao?: 'variavel' | 'recorrente'; // REMOVIDO 'fixo'
     dataComprovante: string;
+    recurrenceInterval?: RecurrenceInterval;
+    recurrenceDuration?: RecurrenceDuration;
   }) => void;
   isLoading?: boolean;
   categories: { entrada: string[]; saida: string[] };
@@ -43,8 +46,11 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
   const [para, setPara] = useState('');
   const [tipo, setTipo] = useState<'entrada' | 'saida'>('saida');
   const [categoria, setCategoria] = useState('');
-  const [classificacao, setClassificacao] = useState<'fixo' | 'variavel' | 'recorrente' | ''>('');
+  const [classificacao, setClassificacao] = useState<'variavel' | 'recorrente' | ''>(''); // REMOVIDO 'fixo'
   const [dataComprovante, setDataComprovante] = useState(format(new Date(), 'yyyy-MM-dd'));
+  // Novos estados para recorrência
+  const [recurrenceInterval, setRecurrenceInterval] = useState<RecurrenceInterval | ''>('');
+  const [recurrenceDuration, setRecurrenceDuration] = useState<RecurrenceDuration | ''>('');
 
   const currentCategories = tipo === 'entrada' ? categories.entrada : categories.saida;
 
@@ -67,6 +73,11 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
       return;
     }
 
+    // Validar campos de recorrência se classificacao === 'recorrente'
+    if (classificacao === 'recorrente' && (!recurrenceInterval || !recurrenceDuration)) {
+      return;
+    }
+
     onSubmit({
       valor: numericValue,
       de: de.trim() || undefined,
@@ -75,6 +86,8 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
       categoria,
       classificacao: classificacao || undefined,
       dataComprovante,
+      recurrenceInterval: recurrenceInterval || undefined,
+      recurrenceDuration: recurrenceDuration || undefined,
     });
 
     // Reset form
@@ -84,6 +97,8 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
     setTipo('saida');
     setCategoria('');
     setClassificacao('');
+    setRecurrenceInterval('');
+    setRecurrenceDuration('');
     setDataComprovante(format(new Date(), 'yyyy-MM-dd'));
     setOpen(false);
   };
@@ -154,13 +169,49 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixo">Fixo</SelectItem>
                   <SelectItem value="variavel">Variável</SelectItem>
                   <SelectItem value="recorrente">Recorrente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
+
+          {/* Campos de recorrência - mostrar apenas quando classificacao === 'recorrente' */}
+          {classificacao === 'recorrente' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="recurrenceInterval">Intervalo *</Label>
+                <Select value={recurrenceInterval || undefined} onValueChange={(v) => setRecurrenceInterval(v as RecurrenceInterval)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRENCE_INTERVALS.map((interval) => (
+                      <SelectItem key={interval.value} value={interval.value}>
+                        {interval.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="recurrenceDuration">Duração *</Label>
+                <Select value={recurrenceDuration || undefined} onValueChange={(v) => setRecurrenceDuration(v as RecurrenceDuration)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRENCE_DURATIONS.map((duration) => (
+                      <SelectItem key={duration.value} value={duration.value}>
+                        {duration.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="dataComprovante">Data *</Label>

@@ -8,6 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,15 +34,19 @@ interface EditRecordDialogProps {
   record: FinanceRecord | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { id: string; data: {
-    valor?: number;
-    de?: string | null;
-    para?: string | null;
-    tipo?: 'entrada' | 'saida';
-    categoria?: string;
-    classificacao?: 'fixo' | 'variavel' | 'recorrente' | null;
-    dataComprovante?: string;
-  }}) => void;
+  onSubmit: (data: {
+    id: string;
+    data: {
+      valor?: number;
+      de?: string | null;
+      para?: string | null;
+      tipo?: 'entrada' | 'saida';
+      categoria?: string;
+      classificacao?: 'variavel' | 'recorrente' | null; // REMOVIDO 'fixo'
+      dataComprovante?: string;
+    };
+    scope?: 'single' | 'future'; // Novo parâmetro para edição de recorrentes
+  }) => void;
   isLoading?: boolean;
   categories: { entrada: string[]; saida: string[] };
 }
@@ -50,8 +64,10 @@ export function EditRecordDialog({
   const [para, setPara] = useState('');
   const [tipo, setTipo] = useState<'entrada' | 'saida'>('saida');
   const [categoria, setCategoria] = useState('');
-  const [classificacao, setClassificacao] = useState<'fixo' | 'variavel' | 'recorrente' | ''>('');
+  const [classificacao, setClassificacao] = useState<'variavel' | 'recorrente' | ''>(''); // REMOVIDO 'fixo'
   const [dataComprovante, setDataComprovante] = useState('');
+  const [showScopeDialog, setShowScopeDialog] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<any>(null);
 
   // Populate form when record changes
   useEffect(() => {
@@ -98,19 +114,41 @@ export function EditRecordDialog({
       return;
     }
 
+    const formData = {
+      valor: numericValue,
+      de: de.trim() || null,
+      para: para.trim() || null,
+      tipo,
+      categoria,
+      classificacao: classificacao || null,
+      dataComprovante,
+    };
+
+    // Se o registro tem recurrenceGroupId, mostrar dialog de confirmação
+    if (record.recurrenceGroupId) {
+      setPendingFormData(formData);
+      setShowScopeDialog(true);
+    } else {
+      // Caso contrário, submeter diretamente
+      onSubmit({
+        id: record.id,
+        data: formData,
+      });
+      onOpenChange(false);
+    }
+  };
+
+  const handleScopeConfirm = (scope: 'single' | 'future') => {
+    if (!record || !pendingFormData) return;
+
     onSubmit({
       id: record.id,
-      data: {
-        valor: numericValue,
-        de: de.trim() || null,
-        para: para.trim() || null,
-        tipo,
-        categoria,
-        classificacao: classificacao || null,
-        dataComprovante,
-      },
+      data: pendingFormData,
+      scope,
     });
 
+    setShowScopeDialog(false);
+    setPendingFormData(null);
     onOpenChange(false);
   };
 
@@ -167,16 +205,24 @@ export function EditRecordDialog({
 
             <div className="space-y-2">
               <Label htmlFor="edit-classificacao">Classificação</Label>
-              <Select value={classificacao || undefined} onValueChange={(v) => setClassificacao(v as any)}>
+              <Select
+                value={classificacao || undefined}
+                onValueChange={(v) => setClassificacao(v as any)}
+                disabled={!!record?.recurrenceGroupId} // Desabilitar se for recorrente
+              >
                 <SelectTrigger id="edit-classificacao">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixo">Fixo</SelectItem>
                   <SelectItem value="variavel">Variável</SelectItem>
                   <SelectItem value="recorrente">Recorrente</SelectItem>
                 </SelectContent>
               </Select>
+              {record?.recurrenceGroupId && (
+                <p className="text-xs text-muted-foreground">
+                  Classificação não pode ser alterada em registros recorrentes
+                </p>
+              )}
             </div>
           </div>
 
@@ -222,6 +268,33 @@ export function EditRecordDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* Dialog de confirmação para edição de registros recorrentes */}
+      <AlertDialog open={showScopeDialog} onOpenChange={setShowScopeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Editar registro recorrente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Este registro faz parte de uma série de registros recorrentes. Como deseja aplicar as alterações?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleScopeConfirm('single')}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Apenas este registro
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => handleScopeConfirm('future')}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Este e todos os futuros
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
