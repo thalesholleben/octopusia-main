@@ -150,7 +150,7 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="categoria">Categoria *</Label>
-              <Select value={categoria || undefined} onValueChange={setCategoria}>
+              <Select value={categoria || ''} onValueChange={setCategoria}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -164,7 +164,7 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
 
             <div className="space-y-2">
               <Label htmlFor="classificacao">Classificação</Label>
-              <Select value={classificacao || undefined} onValueChange={(v) => setClassificacao(v as any)}>
+              <Select value={classificacao || ''} onValueChange={(v) => setClassificacao(v as any)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -181,7 +181,7 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="recurrenceInterval">Intervalo *</Label>
-                <Select value={recurrenceInterval || undefined} onValueChange={(v) => setRecurrenceInterval(v as RecurrenceInterval)}>
+                <Select value={recurrenceInterval || ''} onValueChange={(v) => setRecurrenceInterval(v as RecurrenceInterval)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
@@ -197,7 +197,7 @@ export function CreateRecordDialog({ onSubmit, isLoading, categories, trigger }:
 
               <div className="space-y-2">
                 <Label htmlFor="recurrenceDuration">Duração *</Label>
-                <Select value={recurrenceDuration || undefined} onValueChange={(v) => setRecurrenceDuration(v as RecurrenceDuration)}>
+                <Select value={recurrenceDuration || ''} onValueChange={(v) => setRecurrenceDuration(v as RecurrenceDuration)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
