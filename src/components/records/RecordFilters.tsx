@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Filter, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,7 +37,17 @@ export function RecordFilters({
 }: RecordFiltersProps) {
   const hasFilters = startDate || endDate || tipoFilter || categoriaFilter;
 
-  const allCategories = [...new Set([...categories.entrada, ...categories.saida])].sort();
+  // Filtrar categorias baseado no tipo selecionado
+  const applicableCategories = useMemo(() => {
+    if (tipoFilter === 'entrada') {
+      return categories.entrada.sort();
+    }
+    if (tipoFilter === 'saida') {
+      return categories.saida.sort();
+    }
+    // Se nenhum tipo selecionado, mostrar todas
+    return [...new Set([...categories.entrada, ...categories.saida])].sort();
+  }, [tipoFilter, categories]);
 
   const handleClearFilters = () => {
     onStartDateChange(undefined);
@@ -95,7 +106,7 @@ export function RecordFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas</SelectItem>
-              {allCategories.map((cat) => (
+              {applicableCategories.map((cat) => (
                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
               ))}
             </SelectContent>

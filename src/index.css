@@ -69,6 +69,17 @@
     --font-serif: Merriweather, ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
     --font-mono: "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   }
+
+  /* Estilizar ícone do calendário para tema escuro */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.2);
+    cursor: pointer;
+  }
+
+  /* Accent color para o picker */
+  input[type="date"] {
+    color-scheme: dark;
+  }
 }
 
 @layer base {

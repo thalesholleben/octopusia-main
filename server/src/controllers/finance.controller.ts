@@ -540,17 +540,24 @@ export const deleteFinanceRecord = async (req: Request, res: Response) => {
 
     // Se scope=future E registro tem recurrenceGroupId, excluir todos futuros
     if (scope === 'future' && existing.recurrenceGroupId) {
-      const { count } = await prisma.financeRecord.deleteMany({
-        where: {
-          userId,
-          recurrenceGroupId: existing.recurrenceGroupId,
-          dataComprovante: { gte: existing.dataComprovante },
-        },
+      // Usar transação para garantir atomicidade
+      const result = await prisma.$transaction(async (tx) => {
+        // Deletar ESTE registro + todos os futuros do mesmo grupo
+        const { count } = await tx.financeRecord.deleteMany({
+          where: {
+            userId,
+            recurrenceGroupId: existing.recurrenceGroupId,
+            dataComprovante: { gte: existing.dataComprovante },
+          },
+        });
+        return count;
       });
 
+      console.log(`[DELETE] Deleted ${result} records from group ${existing.recurrenceGroupId}`);
+
       return res.json({
-        message: `${count} registros excluídos com sucesso`,
-        deletedCount: count,
+        message: `${result} registros excluídos com sucesso`,
+        deletedCount: result,
       });
     }
 

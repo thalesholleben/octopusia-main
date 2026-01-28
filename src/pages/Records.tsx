@@ -98,6 +98,16 @@ const Records = () => {
   const handleTipoChange = (tipo: 'entrada' | 'saida' | undefined) => {
     setTipoFilter(tipo);
     setCurrentPage(1);
+
+    // Reset categoria se não existe no novo tipo
+    if (tipo && categoriaFilter) {
+      const validCategories = tipo === 'entrada'
+        ? allCategories.entrada
+        : allCategories.saida;
+      if (!validCategories.includes(categoriaFilter)) {
+        setCategoriaFilter(undefined);
+      }
+    }
   };
 
   const handleCategoriaChange = (categoria: string | undefined) => {
