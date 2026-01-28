@@ -88,90 +88,92 @@ export function FinancialHealthCard() {
         style={{ animationDelay: '500ms', animationFillMode: 'forwards' }}
       >
         {/* Header */}
-        <div className="mb-4 sm:mb-5">
-          <div className="flex items-center gap-2 sm:gap-3 mb-mb-1">
-            <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
-              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            </div>
-            <h2 className="text-base sm:text-lg font-semibold text-foreground">
-              Saúde Financeira
-            </h2>
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
+          <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+            <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           </div>
-          <p className="text-[11px] text-muted-foreground/70 pl-8 sm:pl-[44px] -mt-0.5">
-  Score baseado nos próximos 30 dias. Registros inconsistentes invalidam o Score.
-      </p>
+          <h2 className="text-base sm:text-lg font-semibold text-foreground">
+            Saúde Financeira
+          </h2>
         </div>
 
         {/* Content */}
         {isLoading ? (
           <LoadingSkeleton />
         ) : hasData && metrics ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Score Card - Destaque Principal */}
-            <div className="lg:col-span-6 bg-muted/30 rounded-lg p-4 sm:p-6 border border-border/50 flex flex-col items-center justify-center min-h-[220px]">
-              {/* Badge de tendência (top-right) */}
-              {metrics.trend && (
-                <div className="self-end mb-2">
-                  <div
-                    className={cn(
-                      'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
-                      metrics.trend.color === 'green' && 'bg-green-500/10 text-green-500',
-                      metrics.trend.color === 'yellow' && 'bg-amber-500/10 text-amber-500',
-                      metrics.trend.color === 'red' && 'bg-red-500/10 text-red-500'
-                    )}
-                  >
-                    {metrics.trend.direction === 'improving' && <TrendingUp className="w-3 h-3" />}
-                    {metrics.trend.direction === 'declining' && <TrendingDown className="w-3 h-3" />}
-                    {metrics.trend.direction === 'stable' && <Minus className="w-3 h-3" />}
-                    <span>{metrics.trend.label}</span>
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Score Card - Destaque Principal */}
+              <div className="lg:col-span-6 bg-muted/30 rounded-lg p-4 sm:p-6 border border-border/50 flex flex-col items-center justify-center min-h-[220px]">
+                {/* Badge de tendência (top-right) */}
+                {metrics.trend && (
+                  <div className="self-end mb-2">
+                    <div
+                      className={cn(
+                        'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
+                        metrics.trend.color === 'green' && 'bg-green-500/10 text-green-500',
+                        metrics.trend.color === 'yellow' && 'bg-amber-500/10 text-amber-500',
+                        metrics.trend.color === 'red' && 'bg-red-500/10 text-red-500'
+                      )}
+                    >
+                      {metrics.trend.direction === 'improving' && <TrendingUp className="w-3 h-3" />}
+                      {metrics.trend.direction === 'declining' && <TrendingDown className="w-3 h-3" />}
+                      {metrics.trend.direction === 'stable' && <Minus className="w-3 h-3" />}
+                      <span>{metrics.trend.label}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Progress Ring com Score */}
+                <div className="relative flex items-center justify-center">
+                  <ProgressRing
+                    score={metrics.score}
+                    color={metrics.scoreColor}
+                    size={160}
+                    strokeWidth={10}
+                  />
+                  {/* Score value centered inside ring */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span
+                      className={cn(
+                        'text-4xl sm:text-5xl font-bold',
+                        metrics.scoreColor === 'green' && 'text-green-500',
+                        metrics.scoreColor === 'yellow' && 'text-amber-500',
+                        metrics.scoreColor === 'red' && 'text-red-500'
+                      )}
+                    >
+                      {metrics.score}
+                    </span>
+                    <span
+                      className={cn(
+                        'text-xs font-medium capitalize mt-1',
+                        metrics.scoreColor === 'green' && 'text-green-500',
+                        metrics.scoreColor === 'yellow' && 'text-amber-500',
+                        metrics.scoreColor === 'red' && 'text-red-500'
+                      )}
+                    >
+                      {metrics.scoreLabel}
+                    </span>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Progress Ring com Score */}
-              <div className="relative flex items-center justify-center">
-                <ProgressRing
-                  score={metrics.score}
-                  color={metrics.scoreColor}
-                  size={160}
-                  strokeWidth={10}
-                />
-                {/* Score value centered inside ring */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span
-                    className={cn(
-                      'text-4xl sm:text-5xl font-bold',
-                      metrics.scoreColor === 'green' && 'text-green-500',
-                      metrics.scoreColor === 'yellow' && 'text-amber-500',
-                      metrics.scoreColor === 'red' && 'text-red-500'
-                    )}
-                  >
-                    {metrics.score}
-                  </span>
-                  <span
-                    className={cn(
-                      'text-xs font-medium capitalize mt-1',
-                      metrics.scoreColor === 'green' && 'text-green-500',
-                      metrics.scoreColor === 'yellow' && 'text-amber-500',
-                      metrics.scoreColor === 'red' && 'text-red-500'
-                    )}
-                  >
-                    {metrics.scoreLabel}
-                  </span>
-                </div>
+              {/* Pilares - 6 barras de progresso verticais */}
+              <div className="lg:col-span-6 bg-muted/30 rounded-lg p-4 border border-border/50 flex flex-col justify-center gap-2">
+                <PillarBar pillar={metrics.pillars.cashFlowStability} />
+                <PillarBar pillar={metrics.pillars.predictability} />
+                <PillarBar pillar={metrics.pillars.operationalMargin} />
+                <PillarBar pillar={metrics.pillars.futurePressure} />
+                <PillarBar pillar={metrics.pillars.flowQuality} />
+                <PillarBar pillar={metrics.pillars.resilience} />
               </div>
             </div>
 
-            {/* Pilares - 6 barras de progresso verticais */}
-            <div className="lg:col-span-6 bg-muted/30 rounded-lg p-4 border border-border/50 flex flex-col justify-center gap-2">
-              <PillarBar pillar={metrics.pillars.cashFlowStability} />
-              <PillarBar pillar={metrics.pillars.predictability} />
-              <PillarBar pillar={metrics.pillars.operationalMargin} />
-              <PillarBar pillar={metrics.pillars.futurePressure} />
-              <PillarBar pillar={metrics.pillars.flowQuality} />
-              <PillarBar pillar={metrics.pillars.resilience} />
-            </div>
-          </div>
+            {/* Footer - Disclaimer */}
+            <p className="text-[10px] text-muted-foreground/60 text-center mt-3">
+              Score baseado nos próximos 30 dias. Registros inconsistentes invalidam o Score.
+            </p>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
             <Activity className="w-12 h-12 opacity-30" />
