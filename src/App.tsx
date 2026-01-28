@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
 import Goals from "./pages/Goals";
 import Records from "./pages/Records";
@@ -30,6 +31,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/goals" element={<Goals />} />
                   <Route path="/records" element={<Records />} />

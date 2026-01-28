@@ -68,7 +68,7 @@ export function ExpensePieChart({ filters }: ExpensePieChartProps) {
 
   return (
     <div className="card-float p-4 sm:p-6 h-[320px] sm:h-[400px] opacity-0 animate-fade-up" style={{ animationDelay: '700ms', animationFillMode: 'forwards' }}>
-      <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Distribuição de Gastos</h3>
+      <h3 className="text-base sm:text-lg font-semibold text-foreground mb-8 sm:mb-4">Distribuição de Gastos</h3>
 
       {isLoading ? (
         <div className="h-[calc(100%-40px)] flex flex-col items-center justify-center text-muted-foreground gap-3">
