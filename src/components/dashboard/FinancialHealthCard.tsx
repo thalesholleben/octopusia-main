@@ -97,9 +97,9 @@ export function FinancialHealthCard() {
               Saúde Financeira
             </h2>
           </div>
-          <p className="text-[11px] text-muted-foreground/70 pl-[35px] sm:pl-[39px] -mt-0.5">
+          <p className="text-[11px] text-muted-foreground/70 pl-8 sm:pl-[44px] -mt-0.5">
   Score baseado nos próximos 30 dias. Registros inconsistentes invalidam o Score.
-          </p>
+      </p>
         </div>
 
         {/* Content */}
