@@ -20,6 +20,9 @@ const PORT = process.env.PORT || 3001;
 // Desabilitar ETag (evita 304 Not Modified)
 app.set('etag', false);
 
+// Trust proxy (necessário para rate limiting atrás de proxy/nginx/cloudflare)
+app.set('trust proxy', true);
+
 // Middlewares
 app.use(helmet());
 app.use(cors({
