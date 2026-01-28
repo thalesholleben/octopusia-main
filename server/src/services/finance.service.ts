@@ -13,6 +13,9 @@ import type {
   FinanceKPIs,
   FinanceRecordDTO,
   AIAlertDTO,
+  AdvancedHealthMetricsResponse,
+  PillarResult,
+  TrendData,
 } from '../types/finance.types';
 import { RecurrenceService } from './recurrence.service';
 
@@ -797,5 +800,426 @@ export class FinanceService {
     const scoreData = this.calculateHealthScore(burnRateData, fixedCommitmentData, survivalTimeData);
 
     return scoreData.score;
+  }
+
+  /**
+   * Advanced Health Metrics - Health Score 2.0 (Predictive)
+   * Calcula score preditivo baseado em 6 pilares
+   */
+  async getAdvancedHealthMetrics(userId: string): Promise<AdvancedHealthMetricsResponse> {
+    const now = new Date();
+    const twelveMonthsAgo = subMonths(now, 12);
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Query 1: Todos os registros (saldo global)
+    const allRecords = await this.prisma.financeRecord.findMany({
+      where: { userId },
+    });
+
+    // Query 2: Últimos 12 meses (burn rate, ticket médio, margem)
+    const last12MonthsRecords = await this.prisma.financeRecord.findMany({
+      where: {
+        userId,
+        dataComprovante: { gte: twelveMonthsAgo, lte: now },
+      },
+    });
+
+    // Query 3: Recorrentes (previsibilidade)
+    const recurringRecords = last12MonthsRecords.filter((r) => r.classificacao === 'recorrente');
+
+    // Query 4: Futuros (próximos 30 dias) - pressão futura
+    const futureRecords = await this.prisma.financeRecord.findMany({
+      where: {
+        userId,
+        dataComprovante: { gt: now, lte: thirtyDaysFromNow },
+      },
+    });
+
+    // Edge case: sem dados suficientes
+    if (allRecords.length < 3) {
+      return this.getEmptyAdvancedMetrics();
+    }
+
+    // Calcular saldo global
+    const saldoGlobal = allRecords.reduce((acc, record) => {
+      const valor = Number(record.valor) || 0;
+      return record.tipo === 'entrada' ? acc + valor : acc - valor;
+    }, 0);
+
+    // Calcular métricas base
+    const entradasLast12M = last12MonthsRecords.filter((r) => r.tipo === 'entrada');
+    const saidasLast12M = last12MonthsRecords.filter((r) => r.tipo === 'saida');
+
+    const totalEntradas = entradasLast12M.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+    const totalSaidas = saidasLast12M.reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+    const ticketMedioEntrada = entradasLast12M.length > 0 ? totalEntradas / entradasLast12M.length : 0;
+    const ticketMedioSaida = saidasLast12M.length > 0 ? totalSaidas / saidasLast12M.length : 0;
+
+    const entradasMediasMensais = totalEntradas / 12;
+    const saidasMediasMensais = totalSaidas / 12;
+    const burnRate = saidasMediasMensais;
+
+    // Recorrentes
+    const receitasRecorrentes = recurringRecords
+      .filter((r) => r.tipo === 'entrada')
+      .reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+    const despesasRecorrentes = recurringRecords
+      .filter((r) => r.tipo === 'saida')
+      .reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+    // Futuros
+    const compromissosFuturos30d = futureRecords
+      .filter((r) => r.tipo === 'saida')
+      .reduce((acc, r) => acc + (Number(r.valor) || 0), 0);
+
+    // PILAR 1: Estabilidade de Caixa (20%)
+    const cashFlowStability = this.calculateCashFlowStability(ticketMedioEntrada, ticketMedioSaida);
+
+    // PILAR 2: Previsibilidade (20%)
+    const predictability = this.calculatePredictability(receitasRecorrentes, despesasRecorrentes);
+
+    // PILAR 3: Margem Operacional (20%)
+    const operationalMargin = this.calculateOperationalMargin(totalEntradas, totalSaidas);
+
+    // PILAR 4: Pressão Futura (15%)
+    const futurePressure = this.calculateFuturePressure(
+      compromissosFuturos30d,
+      entradasMediasMensais,
+      receitasRecorrentes / 12
+    );
+
+    // PILAR 5: Qualidade do Fluxo (15%)
+    const flowQuality = this.calculateFlowQuality(
+      cashFlowStability.score,
+      predictability.score,
+      entradasLast12M
+    );
+
+    // PILAR 6: Resiliência (10%)
+    const resilience = this.calculateResilience(saldoGlobal, burnRate);
+
+    // Score total ponderado
+    const totalScore =
+      cashFlowStability.score * 0.2 +
+      predictability.score * 0.2 +
+      operationalMargin.score * 0.2 +
+      futurePressure.score * 0.15 +
+      flowQuality.score * 0.15 +
+      resilience.score * 0.1;
+
+    const finalScore = Math.max(0, Math.min(100, Math.round(totalScore)));
+
+    const scoreLabel: 'sustentável' | 'em atenção' | 'risco progressivo' =
+      finalScore >= 70 ? 'sustentável' : finalScore >= 50 ? 'em atenção' : 'risco progressivo';
+
+    const scoreColor: 'green' | 'yellow' | 'red' =
+      finalScore >= 70 ? 'green' : finalScore >= 50 ? 'yellow' : 'red';
+
+    // Calcular trend (opcional)
+    const trend = this.calculateAdvancedTrend(userId, allRecords, last12MonthsRecords, now);
+
+    return {
+      score: finalScore,
+      scoreLabel,
+      scoreColor,
+      horizon: '30d',
+      pillars: {
+        cashFlowStability,
+        predictability,
+        operationalMargin,
+        futurePressure,
+        flowQuality,
+        resilience,
+      },
+      trend: await trend,
+    };
+  }
+
+  // Helper: Safe ratio para evitar divisão por zero
+  private safeRatio(numerator: number, denominator: number, defaultValue: number = 1.0): number {
+    return denominator > 0 ? numerator / denominator : defaultValue;
+  }
+
+  // PILAR 1: Estabilidade de Caixa
+  private calculateCashFlowStability(ticketEntrada: number, ticketSaida: number): PillarResult {
+    if (ticketSaida === 0) {
+      return {
+        name: 'Estabilidade',
+        value: 0,
+        score: 50,
+        weight: 0.2,
+      };
+    }
+
+    // Clamp para evitar explosão com poucos dados (max 3x)
+    const ratio = Math.min(3, ticketEntrada / ticketSaida);
+
+    // Band-based scoring
+    const score =
+      ratio >= 1.5 ? 100
+      : ratio >= 1.2 ? 85
+      : ratio >= 1.0 ? 70
+      : ratio >= 0.8 ? 50
+      : ratio >= 0.6 ? 30
+      : 10;
+
+    return {
+      name: 'Estabilidade',
+      value: Math.round(ratio * 100) / 100,
+      score,
+      weight: 0.2,
+    };
+  }
+
+  // PILAR 2: Previsibilidade
+  private calculatePredictability(receitasRecorrentes: number, despesasRecorrentes: number): PillarResult {
+    // Caso especial: receita recorrente sem despesas fixas = score perfeito
+    if (despesasRecorrentes === 0 && receitasRecorrentes > 0) {
+      return {
+        name: 'Previsibilidade',
+        value: 999,
+        score: 100,
+        weight: 0.2,
+      };
+    }
+
+    // Sem recorrentes = neutro
+    if (receitasRecorrentes === 0 && despesasRecorrentes === 0) {
+      return {
+        name: 'Previsibilidade',
+        value: 0,
+        score: 70,
+        weight: 0.2,
+      };
+    }
+
+    const ratio = this.safeRatio(receitasRecorrentes, despesasRecorrentes, 0);
+
+    // Band-based scoring
+    const score =
+      ratio >= 1.5 ? 100
+      : ratio >= 1.2 ? 85
+      : ratio >= 1.0 ? 70
+      : ratio >= 0.8 ? 50
+      : ratio >= 0.6 ? 30
+      : 10;
+
+    return {
+      name: 'Previsibilidade',
+      value: Math.round(ratio * 100) / 100,
+      score,
+      weight: 0.2,
+    };
+  }
+
+  // PILAR 3: Margem Operacional
+  private calculateOperationalMargin(totalEntradas: number, totalSaidas: number): PillarResult {
+    const MIN_ENTRADAS = 500;
+
+    // Volume baixo = score neutro
+    if (totalEntradas < MIN_ENTRADAS) {
+      return {
+        name: 'Margem',
+        value: 0,
+        score: 70,
+        weight: 0.2,
+      };
+    }
+
+    const margem = ((totalEntradas - totalSaidas) / totalEntradas) * 100;
+
+    // Band-based scoring
+    const score =
+      margem >= 30 ? 100
+      : margem >= 20 ? 85
+      : margem >= 10 ? 70
+      : margem >= 0 ? 50
+      : margem >= -10 ? 30
+      : 10;
+
+    return {
+      name: 'Margem',
+      value: Math.round(margem * 10) / 10,
+      score,
+      weight: 0.2,
+    };
+  }
+
+  // PILAR 4: Pressão Futura
+  private calculateFuturePressure(
+    compromissosFuturos: number,
+    entradasMediasMensais: number,
+    entradasRecorrentesMensais: number
+  ): PillarResult {
+    // Sem compromissos futuros = ótimo
+    if (compromissosFuturos === 0) {
+      return {
+        name: 'Pressão Futura',
+        value: 0,
+        score: 100,
+        weight: 0.15,
+      };
+    }
+
+    // Prioridade: recorrentes > médias totais
+    const baseEntradas =
+      entradasRecorrentesMensais > 0 ? entradasRecorrentesMensais : entradasMediasMensais;
+
+    const pressao = this.safeRatio(compromissosFuturos, baseEntradas, 0) * 100;
+
+    // Band-based scoring (invertido: menor = melhor)
+    const score =
+      pressao <= 50 ? 100
+      : pressao <= 70 ? 85
+      : pressao <= 100 ? 70
+      : pressao <= 120 ? 50
+      : pressao <= 150 ? 30
+      : 10;
+
+    return {
+      name: 'Pressão Futura',
+      value: Math.round(pressao * 10) / 10,
+      score,
+      weight: 0.15,
+    };
+  }
+
+  // PILAR 5: Qualidade do Fluxo
+  private calculateFlowQuality(
+    estabilidadeScore: number,
+    previsibilidadeScore: number,
+    entradasRecords: any[]
+  ): PillarResult {
+    // Calcular variância das entradas mensais
+    const monthlyTotals: Map<string, number> = new Map();
+
+    entradasRecords.forEach((record) => {
+      const monthKey = startOfMonth(record.dataComprovante).toISOString();
+      const current = monthlyTotals.get(monthKey) || 0;
+      monthlyTotals.set(monthKey, current + (Number(record.valor) || 0));
+    });
+
+    const values = Array.from(monthlyTotals.values());
+
+    if (values.length < 2) {
+      // Dados insuficientes
+      return {
+        name: 'Qualidade',
+        value: 0,
+        score: 50,
+        weight: 0.15,
+      };
+    }
+
+    const mean = values.reduce((acc, v) => acc + v, 0) / values.length;
+    const variance = values.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+    const coefficientOfVariation = mean > 0 ? (stdDev / mean) * 100 : 100;
+
+    // Normalizar variância para 0-100
+    const varianciaScore = Math.max(0, Math.min(100, coefficientOfVariation));
+
+    // Heurística: estabilidade * 0.5 + previsibilidade * 0.3 + (100 - variancia) * 0.2
+    const qualidadeScore =
+      estabilidadeScore * 0.5 + previsibilidadeScore * 0.3 + (100 - varianciaScore) * 0.2;
+
+    return {
+      name: 'Qualidade',
+      value: Math.round((100 - varianciaScore) * 10) / 10,
+      score: Math.round(qualidadeScore),
+      weight: 0.15,
+    };
+  }
+
+  // PILAR 6: Resiliência
+  private calculateResilience(saldoGlobal: number, burnRate: number): PillarResult {
+    if (burnRate <= 0) {
+      return {
+        name: 'Resiliência',
+        value: 999,
+        score: 100,
+        weight: 0.1,
+      };
+    }
+
+    const monthsOfSurvival = saldoGlobal / burnRate;
+
+    // Band-based scoring
+    const score =
+      monthsOfSurvival >= 12 ? 100
+      : monthsOfSurvival >= 6 ? 85
+      : monthsOfSurvival >= 3 ? 70
+      : monthsOfSurvival >= 1 ? 50
+      : monthsOfSurvival >= 0.5 ? 30
+      : 10;
+
+    return {
+      name: 'Resiliência',
+      value: Math.round(monthsOfSurvival * 10) / 10,
+      score,
+      weight: 0.1,
+    };
+  }
+
+  // Trend avançado (opcional)
+  private async calculateAdvancedTrend(
+    userId: string,
+    allRecords: any[],
+    last12MonthsRecords: any[],
+    now: Date
+  ): Promise<TrendData | undefined> {
+    const thirtyDaysAgo = subMonths(now, 1);
+
+    // Filtrar registros até 30 dias atrás
+    const recordsUntil30DaysAgo = allRecords.filter((r) => r.dataComprovante <= thirtyDaysAgo);
+
+    if (recordsUntil30DaysAgo.length < 5) {
+      return undefined;
+    }
+
+    // Calcular score passado (simplificado)
+    const scoreOld = 50; // Placeholder - poderia re-calcular metrics antigas
+    const scoreCurrent = 50; // Placeholder
+
+    const scoreDiff = scoreCurrent - scoreOld;
+
+    const direction: 'improving' | 'stable' | 'declining' =
+      scoreDiff >= 5 ? 'improving' : scoreDiff <= -5 ? 'declining' : 'stable';
+
+    const label = direction === 'improving' ? 'Em melhora' : direction === 'stable' ? 'Estável' : 'Em queda';
+
+    const color = direction === 'improving' ? 'green' : direction === 'stable' ? 'yellow' : 'red';
+
+    return {
+      direction,
+      label,
+      color,
+    };
+  }
+
+  // Empty metrics (edge case)
+  private getEmptyAdvancedMetrics(): AdvancedHealthMetricsResponse {
+    const emptyPillar = (name: string, weight: number): PillarResult => ({
+      name,
+      value: 0,
+      score: 50,
+      weight,
+    });
+
+    return {
+      score: 50,
+      scoreLabel: 'em atenção',
+      scoreColor: 'yellow',
+      horizon: '30d',
+      pillars: {
+        cashFlowStability: emptyPillar('Estabilidade', 0.2),
+        predictability: emptyPillar('Previsibilidade', 0.2),
+        operationalMargin: emptyPillar('Margem', 0.2),
+        futurePressure: emptyPillar('Pressão Futura', 0.15),
+        flowQuality: emptyPillar('Qualidade', 0.15),
+        resilience: emptyPillar('Resiliência', 0.1),
+      },
+    };
   }
 }

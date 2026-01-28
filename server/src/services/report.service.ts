@@ -180,12 +180,14 @@ export class ReportService {
     });
 
     try {
-      // Buscar KPIs para enviar no webhook
+      // Buscar KPIs e Health Metrics para enviar no webhook
       const financeService = new FinanceService(this.prisma);
       const kpis = await financeService.getKPIs(userId, {
         startDate: filters?.startDate,
         endDate: filters?.endDate,
       });
+
+      const healthMetrics = await financeService.getHealthMetrics(userId);
 
       // Preparar payload reduzido para n8n
       const webhookPayload: ReportWebhookPayload = {
@@ -209,6 +211,12 @@ export class ReportService {
             ticketMedio: kpis.ticketMedio,
             mediaMensal: kpis.mediaMensal,
             totalTransacoes: kpis.totalTransacoes,
+          },
+          healthMetrics: {
+            score: healthMetrics.score,
+            burnRate: healthMetrics.burnRate.current,
+            fixedCommitment: healthMetrics.fixedCommitment.value,
+            survivalTime: healthMetrics.survivalTime.value,
           },
         },
       };

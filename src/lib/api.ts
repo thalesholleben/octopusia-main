@@ -306,6 +306,9 @@ export const financeAPI = {
   // Health Metrics
   getHealthMetrics: () => api.get<HealthMetricsResponse>('/finance/health-metrics'),
 
+  // Advanced Health Metrics - Health Score 2.0
+  getAdvancedHealthMetrics: () => api.get<AdvancedHealthMetricsResponse>('/finance/health-metrics-v2'),
+
   // Seasonality
   getSeasonality: (tipo: 'entrada' | 'saida') =>
     api.get<SeasonalityResponse>('/finance/seasonality', { params: { tipo } }),
@@ -385,6 +388,34 @@ export interface SeasonalityResponse {
   minValue: number;
   avgValue: number;
   hasData: boolean;
+}
+
+// Advanced Health Metrics - Health Score 2.0
+export interface PillarResult {
+  name: string;
+  value: number;
+  score: number;
+  weight: number;
+}
+
+export interface AdvancedHealthMetricsResponse {
+  score: number;
+  scoreLabel: 'sustentável' | 'em atenção' | 'risco progressivo';
+  scoreColor: 'green' | 'yellow' | 'red';
+  horizon: '30d';
+  pillars: {
+    cashFlowStability: PillarResult;
+    predictability: PillarResult;
+    operationalMargin: PillarResult;
+    futurePressure: PillarResult;
+    flowQuality: PillarResult;
+    resilience: PillarResult;
+  };
+  trend?: {
+    direction: 'improving' | 'stable' | 'declining';
+    label: string;
+    color: string;
+  };
 }
 
 // Goals API Types

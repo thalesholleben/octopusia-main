@@ -24,7 +24,6 @@ import { FinancialHealthCard } from '@/components/dashboard/FinancialHealthCard'
 import { WhatsAppPromoCard } from '@/components/dashboard/WhatsAppPromoCard';
 import { BalanceAdjustmentDialog } from '@/components/dashboard/BalanceAdjustmentDialog';
 import { useFinancialData } from '@/hooks/useFinancialData';
-import { useHealthMetrics } from '@/hooks/useHealthMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { DateFilterType } from '@/types/financial';
 import { financeAPI } from '@/lib/api';
@@ -55,9 +54,6 @@ const Index = () => {
     startDate: dateFilter.startDate,
     endDate: dateFilter.endDate,
   });
-
-  // Buscar métricas de saúde financeira
-  const { metrics, isLoading: isLoadingHealth, hasData: hasHealthData } = useHealthMetrics();
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -315,11 +311,7 @@ const Index = () => {
         )}
 
         {/* Financial Health Card */}
-        <FinancialHealthCard
-          metrics={metrics}
-          isLoading={isLoadingHealth}
-          hasData={hasHealthData}
-        />
+        <FinancialHealthCard />
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">

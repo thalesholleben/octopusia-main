@@ -1,12 +1,7 @@
-import { Activity, TrendingDown, Lock, Clock, TrendingUp, Minus } from 'lucide-react';
+import { Activity, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { HealthMetrics } from '@/hooks/useHealthMetrics';
-
-interface FinancialHealthCardProps {
-  metrics: HealthMetrics | null;
-  isLoading: boolean;
-  hasData: boolean;
-}
+import { useAdvancedHealthMetrics } from '@/hooks/useAdvancedHealthMetrics';
+import type { PillarResult } from '@/lib/api';
 
 // Progress Ring Component
 function ProgressRing({
@@ -60,15 +55,31 @@ function ProgressRing({
   );
 }
 
-export function FinancialHealthCard({ metrics, isLoading, hasData }: FinancialHealthCardProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+// Pillar Bar Component
+function PillarBar({ pillar }: { pillar: PillarResult }) {
+  const colorClass =
+    pillar.score >= 70
+      ? 'bg-green-500'
+      : pillar.score >= 50
+        ? 'bg-amber-500'
+        : 'bg-red-500';
+
+  return (
+    <div className="flex items-center gap-2 py-1">
+      <span className="text-xs text-muted-foreground w-24 truncate">{pillar.name}</span>
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+        <div
+          className={cn('h-full rounded-full transition-all duration-500 ease-out', colorClass)}
+          style={{ width: `${pillar.score}%` }}
+        />
+      </div>
+      <span className="text-xs font-medium w-8 text-right">{pillar.score}</span>
+    </div>
+  );
+}
+
+export function FinancialHealthCard() {
+  const { metrics, isLoading, hasData } = useAdvancedHealthMetrics();
 
   return (
     <div className="mb-6 sm:mb-8">
@@ -82,7 +93,9 @@ export function FinancialHealthCard({ metrics, isLoading, hasData }: FinancialHe
             <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
               <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
-            <h2 className="text-base sm:text-lg font-semibold text-foreground">Saúde Financeira</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">
+              Saúde Financeira
+            </h2>
           </div>
         </div>
 
@@ -114,7 +127,12 @@ export function FinancialHealthCard({ metrics, isLoading, hasData }: FinancialHe
 
               {/* Progress Ring com Score */}
               <div className="relative flex items-center justify-center">
-                <ProgressRing score={metrics.score} color={metrics.scoreColor} size={160} strokeWidth={10} />
+                <ProgressRing
+                  score={metrics.score}
+                  color={metrics.scoreColor}
+                  size={160}
+                  strokeWidth={10}
+                />
                 {/* Score value centered inside ring */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span
@@ -137,94 +155,22 @@ export function FinancialHealthCard({ metrics, isLoading, hasData }: FinancialHe
                   >
                     {metrics.scoreLabel}
                   </span>
+                  {/* Label de horizonte */}
+                  <span className="text-[10px] text-muted-foreground mt-2">
+                    Baseado nos próximos 30 dias
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Cards Secundários - Empilhados Verticalmente */}
-            <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2 sm:gap-3">
-              {/* Burn Rate */}
-              <div className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TrendingDown className="w-4 h-4 text-muted-foreground" />
-                    <div className="flex flex-col">
-                      <span className="text-xs text-muted-foreground">Burn Rate</span>
-                      <span className="text-[10px] text-muted-foreground/70">Gasto médio mensal</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg lg:text-2xl font-bold text-foreground">
-                      {formatCurrency(metrics.burnRate.current)}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      6m: {formatCurrency(metrics.burnRate.sixMonths)}
-                      {metrics.burnRate.hasLimitedData && (
-                        <span className="text-amber-500 ml-1">*</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Comprometimento Fixo */}
-              <div className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Comprometido</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg lg:text-2xl font-bold text-foreground">
-                      {metrics.fixedCommitment.value.toFixed(1)}%
-                    </span>
-                    <span
-                      className={cn(
-                        'px-1.5 py-0.5 rounded text-[10px] font-medium capitalize',
-                        metrics.fixedCommitment.status === 'saudável' && 'bg-green-500/10 text-green-500',
-                        metrics.fixedCommitment.status === 'atenção' && 'bg-amber-500/10 text-amber-500',
-                        metrics.fixedCommitment.status === 'risco' && 'bg-red-500/10 text-red-500'
-                      )}
-                    >
-                      {metrics.fixedCommitment.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tempo de Sobrevivência */}
-              <div className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Tempo de Sobrevivência</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {metrics.survivalTime.isStable ? (
-                      <span className="text-lg lg:text-2xl font-bold text-green-500">Estável</span>
-                    ) : (
-                      <>
-                        <span className="text-lg lg:text-2xl font-bold text-foreground">
-                          {metrics.survivalTime.value.toFixed(1)}{' '}
-                          <span className="text-xs text-muted-foreground font-normal">
-                            {metrics.survivalTime.unit}
-                          </span>
-                        </span>
-                        <span
-                          className={cn(
-                            'px-1.5 py-0.5 rounded text-[10px] font-medium capitalize',
-                            metrics.survivalTime.status === 'saudável' && 'bg-green-500/10 text-green-500',
-                            metrics.survivalTime.status === 'atenção' && 'bg-amber-500/10 text-amber-500',
-                            metrics.survivalTime.status === 'risco' && 'bg-red-500/10 text-red-500'
-                          )}
-                        >
-                          {metrics.survivalTime.status}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
+            {/* Pilares - 6 barras de progresso verticais */}
+            <div className="lg:col-span-6 bg-muted/30 rounded-lg p-4 border border-border/50 flex flex-col justify-center gap-2">
+              <PillarBar pillar={metrics.pillars.cashFlowStability} />
+              <PillarBar pillar={metrics.pillars.predictability} />
+              <PillarBar pillar={metrics.pillars.operationalMargin} />
+              <PillarBar pillar={metrics.pillars.futurePressure} />
+              <PillarBar pillar={metrics.pillars.flowQuality} />
+              <PillarBar pillar={metrics.pillars.resilience} />
             </div>
           </div>
         ) : (
@@ -246,17 +192,13 @@ function LoadingSkeleton() {
       <div className="lg:col-span-6 bg-muted/30 rounded-lg p-6 border border-border/50 flex items-center justify-center min-h-[220px]">
         <div className="w-40 h-40 rounded-full bg-muted animate-pulse" />
       </div>
-      {/* Secondary cards skeleton */}
-      <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2 sm:gap-3">
-        {[...Array(3)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-muted/30 rounded-lg px-4 py-3 border border-border/50 animate-pulse"
-          >
-            <div className="flex items-center justify-between">
-              <div className="h-4 bg-muted rounded w-24" />
-              <div className="h-6 bg-muted rounded w-20" />
-            </div>
+      {/* Pillars skeleton */}
+      <div className="lg:col-span-6 bg-muted/30 rounded-lg p-4 border border-border/50 flex flex-col justify-center gap-2">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex items-center gap-2 py-1">
+            <div className="h-3 bg-muted rounded w-24 animate-pulse" />
+            <div className="flex-1 h-2 bg-muted rounded-full animate-pulse" />
+            <div className="h-3 bg-muted rounded w-8 animate-pulse" />
           </div>
         ))}
       </div>

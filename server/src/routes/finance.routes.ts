@@ -17,6 +17,7 @@ import {
   getFinanceSummary,
   getExpenseDistribution,
   getHealthMetrics,
+  getAdvancedHealthMetrics,
   getSeasonality,
 } from '../controllers/finance.controller';
 import { authenticateJWT } from '../middlewares/auth.middleware';
@@ -49,6 +50,9 @@ router.get('/expense-distribution', getExpenseDistribution);
 
 // Health Metrics (burn rate, fixed commitment, survival time, score)
 router.get('/health-metrics', getHealthMetrics);
+
+// Advanced Health Metrics - Health Score 2.0 (6 pilares preditivos)
+router.get('/health-metrics-v2', getAdvancedHealthMetrics);
 
 // Seasonality (max/min/avg mensal últimos 12 meses)
 router.get('/seasonality', getSeasonality);

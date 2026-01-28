@@ -43,3 +43,35 @@ export interface AIAlertDTO {
   createdAt: string;
   updatedAt: string;
 }
+
+// Advanced Health Metrics - Health Score 2.0
+export interface PillarResult {
+  name: string;      // Nome em PT-BR
+  value: number;     // Valor calculado (ratio ou %)
+  score: number;     // Score band-based 0-100
+  weight: number;    // Peso (0.10 a 0.20)
+}
+
+export interface TrendData {
+  direction: 'improving' | 'stable' | 'declining';
+  label: string;
+  color: string;
+}
+
+export interface AdvancedHealthMetricsResponse {
+  score: number;
+  scoreLabel: 'sustentável' | 'em atenção' | 'risco progressivo';
+  scoreColor: 'green' | 'yellow' | 'red';
+  horizon: '30d';
+
+  pillars: {
+    cashFlowStability: PillarResult;    // 20%
+    predictability: PillarResult;        // 20%
+    operationalMargin: PillarResult;     // 20%
+    futurePressure: PillarResult;        // 15%
+    flowQuality: PillarResult;           // 15%
+    resilience: PillarResult;            // 10%
+  };
+
+  trend?: TrendData;
+}

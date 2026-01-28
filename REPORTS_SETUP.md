@@ -80,10 +80,10 @@ Crie um novo workflow com os seguintes nodes:
       "totalTransacoes": 42
     },
     "healthMetrics": {
-      "score": 85,
-      "burnRate": 8500,
-      "fixedCommitment": 45,
-      "survivalTime": 1.76
+      "score": 85,              // Score de saúde financeira (0-100)
+      "burnRate": 8500,          // Gasto médio mensal (últimos 12 meses)
+      "fixedCommitment": 45,     // % da renda comprometida com despesas fixas
+      "survivalTime": 1.76       // Meses de sobrevivência com saldo atual
     }
   }
 }
@@ -116,11 +116,17 @@ Saúde Financeira:
 - Comprometimento com Fixos: {{summary.healthMetrics.fixedCommitment}}%
 - Tempo de Sobrevivência: {{summary.healthMetrics.survivalTime}} meses
 
+Instruções:
+1. **Análise do Score de Saúde**: Interprete o score (0-40=crítico, 41-60=atenção, 61-80=saudável, 81-100=excelente)
+2. **Burn Rate**: Destaque se está alto em relação à renda total
+3. **Comprometimento Fixo**: Alerte se >70% (risco), >50% (atenção)
+4. **Tempo de Sobrevivência**: Alerte se <3 meses (risco), <6 meses (atenção)
+
 Gere um relatório em HTML com:
-1. Resumo executivo
-2. Análise das métricas
-3. Insights e recomendações
-4. Alertas importantes (se houver)
+1. Resumo executivo com destaque para o score de saúde
+2. Análise detalhada das métricas financeiras e de saúde
+3. Insights personalizados e recomendações acionáveis
+4. Alertas importantes baseados nas métricas de saúde
 
 Formato: HTML completo com CSS inline para email.
 ```

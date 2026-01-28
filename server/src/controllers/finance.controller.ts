@@ -863,6 +863,21 @@ export const getHealthMetrics = async (req: Request, res: Response) => {
 };
 
 /**
+ * GET /api/finance/health-metrics-v2
+ * Retorna métricas avançadas de saúde financeira (Health Score 2.0 - Predictive)
+ */
+export const getAdvancedHealthMetrics = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const metrics = await financeService.getAdvancedHealthMetrics(userId);
+    res.json(metrics);
+  } catch (error) {
+    console.error('[getAdvancedHealthMetrics] error:', error);
+    res.status(500).json({ error: 'Erro ao calcular métricas avançadas de saúde' });
+  }
+};
+
+/**
  * GET /api/finance/seasonality?tipo=entrada|saida
  * Retorna sazonalidade (max/min/avg mensal últimos 12 meses)
  */

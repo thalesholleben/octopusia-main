@@ -31,5 +31,12 @@
       "fixedCommitment": 45.5,
       "survivalTime": 1.85
     }
+  },
+
+  "_healthMetrics_description": {
+    "score": "Score de saúde financeira (0-100) calculado com base em burn rate, comprometimento fixo e tempo de sobrevivência",
+    "burnRate": "Gasto médio mensal dos últimos 12 meses",
+    "fixedCommitment": "Percentual da renda comprometida com despesas fixas",
+    "survivalTime": "Tempo em meses que o usuário consegue sobreviver com o saldo atual (baseado no burnRate)"
   }
 }
