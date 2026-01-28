@@ -55,33 +55,35 @@ export function DeleteRecordDialog({
   if (record && record.recurrenceGroupId) {
     return (
       <AlertDialog open={open} onOpenChange={onOpenChange}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir registro recorrente</AlertDialogTitle>
             <AlertDialogDescription>
               Este registro faz parte de uma série de registros recorrentes. Como deseja excluir?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                onConfirm(record.id, 'single');
-                onOpenChange(false);
-              }}
-              className="bg-primary hover:bg-primary/90"
-            >
-              Apenas este registro
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => {
-                onConfirm(record.id, 'future');
-                onOpenChange(false);
-              }}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Este e todos os futuros
-            </AlertDialogAction>
+          <AlertDialogFooter className="flex-col gap-2 sm:gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              <AlertDialogAction
+                onClick={() => {
+                  onConfirm(record.id, 'single');
+                  onOpenChange(false);
+                }}
+                className="bg-primary hover:bg-primary/90 flex-1"
+              >
+                Apenas este registro
+              </AlertDialogAction>
+              <AlertDialogAction
+                onClick={() => {
+                  onConfirm(record.id, 'future');
+                  onOpenChange(false);
+                }}
+                className="bg-destructive hover:bg-destructive/90 flex-1"
+              >
+                Este e todos os futuros
+              </AlertDialogAction>
+            </div>
+            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

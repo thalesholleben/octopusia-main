@@ -77,7 +77,7 @@ const Records = () => {
   };
 
   const handleConfirmDelete = (id: string, scope?: 'single' | 'future') => {
-    mutations.deleteRecord(id, scope);
+    mutations.deleteRecord({ id, scope });
     // Se deletar último registro da página E não for página 1, voltar para página anterior
     if (records.length === 1 && currentPage > 1) {
       setCurrentPage(currentPage - 1);

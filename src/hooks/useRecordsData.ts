@@ -87,10 +87,12 @@ export const useRecordsData = (filters: RecordFilters = {}) => {
 
   // Delete record mutation
   const deleteMutation = useMutation({
-    mutationFn: financeAPI.deleteRecord,
-    onSuccess: () => {
+    mutationFn: ({ id, scope }: { id: string; scope?: 'single' | 'future' }) =>
+      financeAPI.deleteRecord(id, scope),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['finance'] });
-      toast.success('Registro excluído com sucesso!');
+      const count = data.data.deletedCount || 1;
+      toast.success(count > 1 ? `${count} registros excluídos com sucesso!` : 'Registro excluído com sucesso!');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Erro ao excluir registro');
