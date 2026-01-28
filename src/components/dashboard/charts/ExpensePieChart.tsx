@@ -67,8 +67,8 @@ export function ExpensePieChart({ filters }: ExpensePieChartProps) {
   };
 
   return (
-    <div className="card-float p-4 sm:p-6 h-[320px] sm:h-[400px] opacity-0 animate-fade-up" style={{ animationDelay: '700ms', animationFillMode: 'forwards' }}>
-      <h3 className="text-base sm:text-lg font-semibold text-foreground mb-8 sm:mb-4">Distribuição de Gastos</h3>
+    <div className="card-float p-4 sm:p-6 h-[350px] sm:h-[400px] opacity-0 animate-fade-up" style={{ animationDelay: '700ms', animationFillMode: 'forwards' }}>
+      <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 sm:mb-4">Distribuição de Gastos</h3>
 
       {isLoading ? (
         <div className="h-[calc(100%-40px)] flex flex-col items-center justify-center text-muted-foreground gap-3">
@@ -82,7 +82,7 @@ export function ExpensePieChart({ filters }: ExpensePieChartProps) {
         </div>
       ) : (
         <div className="flex flex-col sm:flex-row h-[calc(100%-40px)]">
-          <div className="w-full sm:w-1/2 h-[180px] sm:h-full">
+          <div className="w-full sm:w-1/2 h-[200px] sm:h-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
