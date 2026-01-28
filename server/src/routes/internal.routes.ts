@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticateInternalKey } from '../middlewares/internal.middleware';
 import { getInternalFinanceSummary } from '../controllers/finance.controller';
+import { reportCallback } from '../controllers/report.controller';
 
 const router = Router();
 
@@ -35,5 +36,29 @@ const router = Router();
  *   }
  */
 router.get('/finance/summary', authenticateInternalKey, getInternalFinanceSummary);
+
+/**
+ * POST /api/internal/reports/callback
+ *
+ * Callback do n8n para atualizar status do relatório após geração
+ *
+ * Headers:
+ *   - X-Internal-Key: Chave de autenticação interna
+ *
+ * Body:
+ *   {
+ *     "reportId": "uuid",
+ *     "status": "sent" | "failed",
+ *     "content": "<html>...</html>",  // Opcional, apenas se status === 'sent'
+ *     "errorMessage": "..."           // Opcional, apenas se status === 'failed'
+ *   }
+ *
+ * Response:
+ *   {
+ *     "success": true,
+ *     "report": { ...ReportDTO }
+ *   }
+ */
+router.post('/reports/callback', authenticateInternalKey, reportCallback);
 
 export default router;

@@ -5,6 +5,7 @@ import { Header } from '@/components/dashboard/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { userAPI, goalsAPI } from '@/lib/api';
 import { ResetLevelDialog } from '@/components/gamification/ResetLevelDialog';
+import { GenerateReportCard } from '@/components/reports/GenerateReportCard';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -267,9 +268,9 @@ export default function Settings() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                <CardTitle>Relatórios</CardTitle>
+                <CardTitle>Preferências de Relatório</CardTitle>
               </div>
-              <CardDescription>Configure o tipo de relatório que deseja receber</CardDescription>
+              <CardDescription>Escolha o tipo de relatório que será gerado quando você solicitar</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -282,19 +283,22 @@ export default function Settings() {
                     <SelectValue placeholder="Selecione o tipo de relatório" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Desativado</SelectItem>
-                    <SelectItem value="simple">Simples (mensal)</SelectItem>
+                    <SelectItem value="none">Não gerar relatórios</SelectItem>
+                    <SelectItem value="simple">Relatório Simples - Resumo financeiro básico</SelectItem>
                     <SelectItem
                       value="advanced"
                       disabled={subscription !== 'pro'}
                     >
-                      Avançado (quinzenal) {subscription !== 'pro' && '- Apenas Pro'}
+                      Relatório Avançado - Análise detalhada com IA {subscription !== 'pro' && '(Apenas PRO)'}
                     </SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  ℹ️ Relatórios são gerados sob demanda, não automaticamente.
+                </p>
                 {subscription !== 'pro' && (
                   <p className="text-xs text-muted-foreground">
-                    Relatório avançado disponível apenas para assinatura Pro
+                    Relatório avançado disponível apenas para assinatura PRO
                   </p>
                 )}
               </div>
@@ -323,6 +327,9 @@ export default function Settings() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Generate Report Card */}
+          <GenerateReportCard />
 
           {/* Security Card - Change Password */}
           <Card className="card-float opacity-0 animate-fade-up" style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}>
